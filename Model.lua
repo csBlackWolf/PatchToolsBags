@@ -41,6 +41,49 @@ function Bags:DisplayOrder(slots)
     end)
     return display
 end
+-- Persist slot coordinates, not item identities: manual moves and newly looted
+-- items stay at their chosen display position until the next explicit sort.
+function Bags:Sections(slots,sort)
+    if not self.layout then
+        self.db.layouts=self.db.layouts or {}
+        local character=UnitGUID and UnitGUID("player") or "current"
+        self.db.layouts[character]=self.db.layouts[character] or {}
+        self.layout=self.db.layouts[character]
+    end
+    local sections,byKey={},{}
+    for _,slot in ipairs(slots) do
+        local key=slot.family==0 and "general" or "bag"..slot.bag
+        if not byKey[key] then
+            local section={key=key,bag=slot.bag,family=slot.family,slots={}}
+            byKey[key]=section; sections[#sections+1]=section
+        end
+        table.insert(byKey[key].slots,slot)
+    end
+    table.sort(sections,function(a,b)
+        if a.key=="general" then return b.key~="general" end
+        if b.key=="general" then return false end
+        return a.bag<b.bag
+    end)
+    for _,section in ipairs(sections) do
+        local ordered={}
+        if sort then ordered=self:DisplayOrder(section.slots)
+        else
+            local remaining={}
+            for _,slot in ipairs(section.slots) do remaining[slot.bag..":"..slot.slot]=slot end
+            for _,key in ipairs(self.layout[section.key] or {}) do
+                if remaining[key] then ordered[#ordered+1]=remaining[key]; remaining[key]=nil end
+            end
+            for _,slot in ipairs(section.slots) do
+                if remaining[slot.bag..":"..slot.slot] then ordered[#ordered+1]=slot end
+            end
+        end
+        section.slots=ordered
+        local keys={}
+        for i,slot in ipairs(ordered) do keys[i]=slot.bag..":"..slot.slot end
+        self.layout[section.key]=keys
+    end
+    return sections
+end
 function Bags:Signature(info)
     return info and ((info.hyperlink or tostring(info.itemID)).."#"..info.stackCount) or "empty"
 end

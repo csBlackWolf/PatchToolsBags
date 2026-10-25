@@ -53,3 +53,17 @@ _,reason=Bags:NextMove({locked}); assert(reason=='wait')
 assert(Bags:Matches({info={quality=0},mark='sell'},'schrott'))
 assert(not Bags:Matches({info={quality=2},mark='protected'},'sell'))
 print('PASS: 150 randomized inventories: visual order/identity, merge-only moves, stack/suffix/family conservation.')
+
+Bags.db={}; Bags.layout=nil
+local a,b,c=item(3,1),item(1,1),item(2,1,2)
+a.bag=0; a.slot=1; b.bag=0; b.slot=2; c.bag=1; c.slot=1
+local sections=Bags:Sections({a,b,c})
+assert(#sections==2 and sections[1].slots[1]==a and sections[2].slots[1]==c)
+sections=Bags:Sections({a,b,c},true)
+assert(sections[1].slots[1]==b)
+a.name='AAAA'; b.name='ZZZZ'; a.class=0; b.class=0
+sections=Bags:Sections({a,b,c})
+assert(sections[1].slots[1]==b,'Refresh must not apply fresh sorting')
+local extra=item(4,1,2); extra.bag=2; extra.slot=1
+sections=Bags:Sections({a,b,c,extra})
+assert(#sections==3,'Separate specialty bags need separate sections even with the same family')

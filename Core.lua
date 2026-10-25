@@ -47,16 +47,18 @@ function Bags:QueueRefresh()
     end)
 end
 function Bags:StopSort(message)
+    if self.sorting then self:Sections(self:Scan(),true) end
     self.sorting=nil
     if message then self:Print(message[1],message[2]) end
     self:QueueRefresh()
 end
 function Bags:Sort()
-    self:RefreshWindow()
     if self.sorting then return end
     if InCombatLockdown() or GetCursorInfo() then
         self:Print("Sort outside combat with an empty cursor.","Bitte außerhalb des Kampfes mit leerem Mauszeiger sortieren."); return
     end
+    self:Sections(self:Scan(),true)
+    self:RefreshWindow()
     self.sorting=true
     local steps=0
     local function Step()

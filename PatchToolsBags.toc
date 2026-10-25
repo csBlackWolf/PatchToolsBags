@@ -2,7 +2,7 @@
 ## Title: PatchToolsBags
 ## Notes: A compact shared bag with search, sorting and PatchTools item rules.
 ## Author: Zen
-## Version: 0.1.0-alpha.2
+## Version: 0.1.0-alpha.3
 ## Dependencies: PatchTools
 ## IconTexture: Interface\AddOns\PatchTools\Media\Icon
 ## SavedVariables: PatchToolsBagsDB

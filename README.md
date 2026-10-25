@@ -1,6 +1,6 @@
 # PatchToolsBags
 
-An independent optional bag module for PatchTools. **0.1.0-alpha.2 is a local
+An independent optional bag module for PatchTools. **0.1.0-alpha.3 is a local
 prototype for Classic Era; bugs and unfinished behavior are expected.** Forever
 uses the additional profession bag when available, but needs its own in-game test.
 
@@ -23,14 +23,17 @@ or saved inventory data is automatically disabled or removed.
 ## Included
 
 - One movable window, dark background and thin bronze border. Drag its lower right corner to scale it (65–130%).
-- Carried bags sorted visually by class, subclass and name; adjustable scale and columns.
+- Carried bags with click-triggered visual sorting; adjustable scale and columns.
 - Search by name, ID and item type. Search dims nonmatches without moving items.
 - Search shortcuts: `quest`, `junk` / `schrott`, `sell` / `verkauf`,
   `protected` / `geschützt`.
-- Automatic visual ordering by item class, subclass, name and full item link.
+- Click-triggered visual ordering by item class, subclass, name and full item link.
   Display slots retain their real bag/slot coordinates for clicks and dragging.
-- The sort button only consolidates identical partial stacks. Other items never
-  move physically. Specialty bag families stay separate during consolidation.
+- Only identical partial stacks move physically when Sort is clicked. Other items
+  retain their real slots. Saved display positions persist across refreshes and
+  reloads per character, so manual dragging is not undone by automatic sorting.
+- General bags share a section; each specialty bag has its own named section
+  within the same window. Specialty families remain separate for consolidation.
   No bank or equipped items are touched.
 - Q = quest item; P = protected by PatchTools; V = currently eligible for sale
   under PatchTools settings; J = junk without an active/known sale eligibility.
@@ -42,7 +45,8 @@ or saved inventory data is automatically disabled or removed.
 
 ## Limits and safety
 
-Visual sorting does not move inventory items or wait for the server. Physical
+Visual sorting happens only on a Sort click and does not move inventory items
+or wait for the server. Physical
 stack consolidation is explicit, outside combat, with an empty cursor. It stops for locked
 or uncached items, unexpected inventory changes or unconfirmed movements. Close
 the window to stop further movements; an already completed movement is retained.

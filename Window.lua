@@ -166,12 +166,41 @@ function Bags:CreateWindow()
     self:PlaceWindow()
 end
 function Bags:RefreshWindow()
-    local slots=self:DisplayOrder(self:Scan()); local f=self.window
+    local slots=self:Scan(); local f=self.window
+    local sections=self:Sections(slots)
     local available=UIParent:GetHeight()/self.db.scale-160
     local columns=math.max(self.db.columns,math.ceil(#slots/math.max(1,math.floor(available/40))))
     columns=math.min(20,columns)
-    f:SetSize(math.max(400,columns*40+20),math.ceil(#slots/columns)*40+132)
+    local function ContentHeight()
+        local height=0
+        for _,section in ipairs(sections) do height=height+24+math.ceil(#section.slots/columns)*40+8 end
+        return height
+    end
+    while ContentHeight()>available and columns<20 do columns=columns+1 end
+    f:SetSize(math.max(400,columns*40+20),ContentHeight()+132)
     f:SetScale(self.db.scale)
+    self.sectionLabels=self.sectionLabels or {}
+    for _,label in ipairs(self.sectionLabels) do label:Hide() end
+    local y=78
+    for index,section in ipairs(sections) do
+        local label=self.sectionLabels[index]
+        if not label then label=self:Text(f,"",11); self.sectionLabels[index]=label end
+        local title=self:T("Bags","Taschen")
+        if section.key~="general" then
+            local getName=C_Container.GetBagName or GetBagName
+            title=(getName and getName(section.bag)) or self:T("Specialty bag","Spezialtasche")
+        end
+        local free=0
+        for _,slot in ipairs(section.slots) do if not slot.info then free=free+1 end end
+        label:SetText(title.." · "..free.." / "..#section.slots..self:T(" free"," frei"))
+        label:ClearAllPoints(); label:SetPoint("TOPLEFT",f,"TOPLEFT",10,-y); label:Show()
+        y=y+24
+        for i,slot in ipairs(section.slots) do
+            slot.viewX=10+((i-1)%columns)*40
+            slot.viewY=-y-math.floor((i-1)/columns)*40
+        end
+        y=y+math.ceil(#section.slots/columns)*40+8
+    end
     local used=0
     for _,b in pairs(self.buttons) do b:Hide() end
     local marks={quest={"Q",1,0.85,0.2},protected={"P",0.3,0.8,1},sell={"V",1,0.7,0.1},junk={"J",0.7,0.7,0.7}}
@@ -182,7 +211,7 @@ function Bags:RefreshWindow()
         local key=s.bag..":"..s.slot
         local b=self.buttons[key]
         if not b then b=self:CreateItemButton(self.bagParents[s.bag],s.bag,s.slot); b.ptBags=true; self.buttons[key]=b end
-        b:ClearAllPoints(); b:SetPoint("TOPLEFT",f,"TOPLEFT",10+((i-1)%columns)*40,-78-math.floor((i-1)/columns)*40)
+        b:ClearAllPoints(); b:SetPoint("TOPLEFT",f,"TOPLEFT",s.viewX,s.viewY)
         b:Show(); b.hasItem=s.info~=nil; b.readable=s.info and s.info.isReadable
         SetItemButtonTexture(b,s.info and s.info.iconFileID or "Interface\\Buttons\\WHITE8X8")
         local icon=b.icon or _G[b:GetName().."IconTexture"]
