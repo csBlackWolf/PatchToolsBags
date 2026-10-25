@@ -125,6 +125,33 @@ function Bags:CreateWindow()
     f.legend=self:Text(f,self:T("Q Quest   P Protected   V Sell   J Junk","Q Quest   P Geschützt   V Verkauf   J Schrott"),10)
     f.legend:SetPoint("BOTTOMLEFT",10,10); f.legend:SetTextColor(0.7,0.66,0.55)
     f.money=self:Text(f,"",11); f.money:SetPoint("BOTTOMRIGHT",-10,29)
+    local grip=CreateFrame("Button",nil,f)
+    grip:SetSize(20,20); grip:SetPoint("BOTTOMRIGHT",-1,1)
+    grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    local function StopScaling()
+        grip:SetScript("OnUpdate",nil)
+        self.db.x=f:GetLeft(); self.db.y=f:GetTop()
+    end
+    grip:SetScript("OnMouseDown",function(_,button)
+        if button~="LeftButton" then return end
+        local cursorX,cursorY=GetCursorPosition()
+        local uiScale=UIParent:GetEffectiveScale()
+        local initial=self.db.scale
+        local left,top=f:GetLeft()*initial,f:GetTop()*initial
+        local span=f:GetWidth()+f:GetHeight()
+        grip:SetScript("OnUpdate",function()
+            if not IsMouseButtonDown("LeftButton") then StopScaling(); return end
+            local x,y=GetCursorPosition()
+            local value=math.max(0.65,math.min(1.3,initial+((x-cursorX)-(y-cursorY))/uiScale/span))
+            self.db.scale=value
+            f:SetScale(value)
+            f:ClearAllPoints(); f:SetPoint("TOPLEFT",UIParent,"BOTTOMLEFT",left/value,top/value)
+        end)
+    end)
+    grip:SetScript("OnMouseUp",StopScaling)
+    grip:SetScript("OnHide",function() grip:SetScript("OnUpdate",nil) end)
     self.bagParents={}; self.buttons={}; self.query=""
     f:SetScript("OnShow",function() self:RefreshWindow() end)
     f:SetScript("OnHide",function()

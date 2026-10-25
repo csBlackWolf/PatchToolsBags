@@ -22,7 +22,7 @@ or saved inventory data is automatically disabled or removed.
 
 ## Included
 
-- One movable window, dark background and thin bronze border.
+- One movable window, dark background and thin bronze border. Drag its lower right corner to scale it (65–130%).
 - Carried bags in stable slot order; adjustable scale and columns.
 - Search by name, ID and item type. Search dims nonmatches without moving items.
 - Search shortcuts: `quest`, `junk` / `schrott`, `sell` / `verkauf`,

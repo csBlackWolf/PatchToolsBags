@@ -31,6 +31,6 @@ function Bags:BuildOptions(parent)
     Slider(-345,"Columns","Spalten","columns",6,16,1)
     local open=self:Button(parent,self:T("Open bags","Taschen öffnen"),180,function() self:CreateWindow(); self.window:Show() end)
     open:SetPoint("TOPLEFT",0,-435)
-    local note=self:Text(parent,self:T("Drag the title to move. Reset: /ptbags reset\nSorting only moves carried items. Quest and protected items are never marked for sale.","Zum Verschieben die Titelleiste ziehen. Zurücksetzen: /ptbags reset\nSortieren verschiebt nur mitgeführte Gegenstände. Questitems und geschützte Items erhalten keine Verkaufsmarkierung."),12)
+    local note=self:Text(parent,self:T("Drag the title to move; drag the lower right corner to scale. Reset: /ptbags reset\nSorting only moves carried items. Quest and protected items are never marked for sale.","Titelleiste ziehen: verschieben. Ecke unten rechts ziehen: skalieren. Reset: /ptbags reset\nSortieren verschiebt nur mitgeführte Gegenstände. Questitems und geschützte Items erhalten keine Verkaufsmarkierung."),12)
     note:SetPoint("TOPLEFT",0,-490); note:SetWidth(560); note:SetJustifyH("LEFT")
 end

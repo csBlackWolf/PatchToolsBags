@@ -2,7 +2,7 @@ unpack=table.unpack
 local frames,queue={},{}
 local methods={}
 local function noop() end
-for name in ('SetJustifyH SetBackdrop SetBackdropColor SetBackdropBorderColor SetSize SetHeight SetWidth SetPoint ClearAllPoints SetFrameStrata SetMovable SetClampedToScreen EnableMouse RegisterForClicks RegisterForDrag SetAutoFocus SetMaxLetters ClearFocus SetTextColor SetAlpha SetAllPoints SetFont SetValueStep SetObeyStepOnDrag StartMoving StopMovingOrSizing SetOwner SetBagItem SetMinMaxValues'):gmatch('%S+') do methods[name]=noop end
+for name in ('SetNormalTexture SetHighlightTexture SetPushedTexture SetJustifyH SetBackdrop SetBackdropColor SetBackdropBorderColor SetSize SetHeight SetWidth SetPoint ClearAllPoints SetFrameStrata SetMovable SetClampedToScreen EnableMouse RegisterForClicks RegisterForDrag SetAutoFocus SetMaxLetters ClearFocus SetTextColor SetAlpha SetAllPoints SetFont SetValueStep SetObeyStepOnDrag StartMoving StopMovingOrSizing SetOwner SetBagItem SetMinMaxValues'):gmatch('%S+') do methods[name]=noop end
 function methods:SetScript(key,fn) self.scripts[key]=fn end
 function methods:RegisterEvent(event) self.events[event]=true end
 function methods:CreateFontString() return CreateFrame('FontString') end
