@@ -37,7 +37,8 @@ or saved inventory data is automatically disabled or removed.
   No bank or equipped items are touched.
 - Native game icons mark quest items (!), protection (key), sale candidates
   (gold coin) and junk (the same coin in grey). Quest/protection take precedence.
-  Markers are inset from the two-pixel rarity border; quest items have a gold border.
+  Markers sit inside the border with a soft black silhouette outline. Rarity
+  and quest borders use Blizzard's rounded icon-frame artwork; quest borders are gold.
 - Section names are replaced by a small bag icon on the left, with the free slot
   count below. Hover for totals and all bag names in that section. Specialty bags
   use their equipped bag icon when available, with explicit quiver/ammo-pouch

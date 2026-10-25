@@ -122,18 +122,25 @@ drain()
 assert(mutations==0,'Opening the sorted display must not move any items')
 assert(Bags.buttons['0:1'].mark.texture=='Interface\\MoneyFrame\\UI-GoldIcon')
 assert(Bags.buttons['0:1'].mark.desaturated==true,'Junk coin must be grey')
-assert(Bags.buttons['0:1'].mark.point[3]==-4 and Bags.buttons['0:1'].mark.point[2]==4,'Marker must be inset from the border')
+assert(Bags.buttons['0:1'].edge.texture=='Interface\\Common\\WhiteIconFrame','Item outline must use native rounded artwork')
+assert(#Bags.buttons['0:1'].markShadows==8)
+for _,shadow in ipairs(Bags.buttons['0:1'].markShadows) do
+ assert(shadow.texture==Bags.buttons['0:1'].mark.texture and shadow.vertex[1]==0 and shadow:IsShown(),'Outline must follow the marker silhouette')
+end
+assert(not Bags.buttons['0:2'].markShadows[1]:IsShown(),'Empty slots must not retain marker outlines')
+
+assert(Bags.buttons['0:1'].mark.point[3]==-6 and Bags.buttons['0:1'].mark.point[2]==4,'Marker must be inset from the border')
 local savedQuest=C_Container.GetContainerItemQuestInfo
 C_Container.GetContainerItemQuestInfo=function(bag,slot) return {isQuestItem=bag==0 and slot==3} end
 Bags:RefreshWindow()
-local questBorder=Bags.buttons['0:3'].edge.border
+local questBorder=Bags.buttons['0:3'].edge.vertex
 assert(questBorder[1]==1 and questBorder[2]==0.78 and questBorder[3]==0.08,'Quest border must be gold')
 assert(Bags.buttons['0:3'].mark.desaturated==false,'Grey state must not leak to quest icons')
 C_Container.GetContainerItemQuestInfo=savedQuest
 Bags:RefreshWindow()
 
 local first=Bags.buttons['0:1']
-assert(first.point[4]==38 and first.point[5]==-58,'Opening must retain real slot order before an explicit sort')
+assert(first.point[4]==26 and first.point[5]==-58,'Opening must retain real slot order before an explicit sort')
 assert(Bags.sectionBadges[2].title:find('Specialty') or Bags.sectionBadges[2].title:find('Spezial'),'Specialty bags need a separate visible section')
 assert(Bags.sectionBadges[1].count.text==3,'Combined badge must count free slots')
 assert(#Bags.sectionBadges[1].bagLines==2,'Combined tooltip must list every included bag')
@@ -154,7 +161,7 @@ assert(inventory[0][1].itemID==3 and inventory[0][1].stackCount==3,'Non-stack it
 assert(inventory[0][3].itemID==1 and inventory[0][3].stackCount==20)
 assert(inventory[1][1].itemID==1 and inventory[1][1].stackCount==5)
 assert(inventory[2][1].itemID==9,'Specialty bag must retain its family')
-assert(Bags.buttons['0:3'].point[4]==38 and Bags.buttons['0:3'].point[5]==-58,'Sort click must order the normal-bag section')
+assert(Bags.buttons['0:3'].point[4]==26 and Bags.buttons['0:3'].point[5]==-58,'Sort click must order the normal-bag section')
 assert(Bags.buttons['2:1'].point[5]<Bags.buttons['0:3'].point[5],'Specialty slots must be below normal bags')
 
 local previous=mutations; Bags:Sort(); drain(); assert(mutations==previous,'Already sorted inventory should do no work')

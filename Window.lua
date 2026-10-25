@@ -85,13 +85,21 @@ function Bags:CreateItemButton(parent,bag,slot)
         ResetCursor()
     end)
     b:SetScript("OnUpdate",nil)
-    b.edge=CreateFrame("Frame",nil,b,"BackdropTemplate"); b.edge:SetAllPoints()
-    b.edge:SetBackdrop({edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=2})
+    -- Blizzard's native rounded icon outline follows the item button shape.
+    b.edge=b:CreateTexture(nil,"OVERLAY",nil,4); b.edge:SetAllPoints()
+    b.edge:SetTexture("Interface\\Common\\WhiteIconFrame")
     local icon=b.icon or _G[b:GetName().."IconTexture"]
     if icon then
         icon:ClearAllPoints(); icon:SetPoint("TOPLEFT",2,-2); icon:SetPoint("BOTTOMRIGHT",-2,2)
     end
-    b.mark=b:CreateTexture(nil,"OVERLAY",nil,7); b.mark:SetSize(13,13); b.mark:SetPoint("TOPLEFT",4,-4)
+    b.mark=b:CreateTexture(nil,"OVERLAY",nil,7); b.mark:SetSize(13,13); b.mark:SetPoint("TOPLEFT",4,-6)
+    b.markShadows={}
+    for _,offset in ipairs({{-1,0},{1,0},{0,-1},{0,1},{-1,-1},{1,-1},{-1,1},{1,1}}) do
+        local shadow=b:CreateTexture(nil,"OVERLAY",nil,6)
+        shadow:SetSize(13,13); shadow:SetPoint("CENTER",b.mark,"CENTER",offset[1],offset[2])
+        shadow:SetVertexColor(0,0,0,(offset[1]==0 or offset[2]==0) and 0.5 or 0.25)
+        b.markShadows[#b.markShadows+1]=shadow
+    end
     return b
 end
 function Bags:CreateWindow()
@@ -194,7 +202,7 @@ function Bags:RefreshWindow()
         return height
     end
     while ContentHeight()>available and columns<20 do columns=columns+1 end
-    f:SetSize(math.max(300,columns*38+42),ContentHeight()+80)
+    f:SetSize(math.max(300,columns*38+30),ContentHeight()+80)
     f:SetScale(self.db.scale)
     self.sectionBadges=self.sectionBadges or {}
     for _,badge in ipairs(self.sectionBadges) do badge:Hide() end
@@ -202,7 +210,7 @@ function Bags:RefreshWindow()
     for index,section in ipairs(sections) do
         local badge=self.sectionBadges[index]
         if not badge then
-            badge=CreateFrame("Frame",nil,f); badge:SetSize(26,40); badge:EnableMouse(true)
+            badge=CreateFrame("Frame",nil,f); badge:SetSize(20,40); badge:EnableMouse(true)
             badge.icon=badge:CreateTexture(nil,"ARTWORK"); badge.icon:SetSize(18,18); badge.icon:SetPoint("TOP",0,-2)
             badge.count=self:Text(badge,"",10); badge.count:SetPoint("TOP",0,-23)
             badge:SetScript("OnEnter",function()
@@ -233,9 +241,9 @@ function Bags:RefreshWindow()
         end
         badge.detail=string.format(self:T("%d free / %d slots","%d frei / %d Plätze"),free,#section.slots)
         badge.icon:SetTexture(self:SectionIcon(section)); badge.count:SetText(free)
-        badge:ClearAllPoints(); badge:SetPoint("TOPLEFT",f,"TOPLEFT",6,-y); badge:Show()
+        badge:ClearAllPoints(); badge:SetPoint("TOPLEFT",f,"TOPLEFT",3,-y); badge:Show()
         for i,slot in ipairs(section.slots) do
-            slot.viewX=38+((i-1)%columns)*38
+            slot.viewX=26+((i-1)%columns)*38
             slot.viewY=-y-math.floor((i-1)/columns)*38
         end
         y=y+math.max(40,math.ceil(#section.slots/columns)*38)+4
@@ -267,16 +275,20 @@ function Bags:RefreshWindow()
         if s.info then used=used+1 end
         local q=s.info and s.info.quality
         local color=q and q>=2 and ITEM_QUALITY_COLORS[q]
-        if s.mark=="quest" then b.edge:SetBackdropBorderColor(1,0.78,0.08,1)
-        else b.edge:SetBackdropBorderColor(color and color.r*0.9 or 0.25,color and color.g*0.9 or 0.22,color and color.b*0.9 or 0.15,1) end
+        if s.mark=="quest" then b.edge:SetVertexColor(1,0.78,0.08,1)
+        else b.edge:SetVertexColor(color and color.r*0.9 or 0.25,color and color.g*0.9 or 0.22,color and color.b*0.9 or 0.15,1) end
         local mark=self.db.markers and s.mark
         -- Use the same coin for both sale lists and junk, with grey denoting junk.
         -- Quest and blocklist protection still win.
         if self.db.markers and s.info and s.info.quality==0 and mark~="quest" and mark~="protected" then mark="junk" end
-        b.mark:Hide()
+        local markerTexture=mark=="junk" and marks.sell or (mark and marks[mark])
+        b.mark:SetShown(markerTexture~=nil and markerTexture~=false)
         b.mark:SetDesaturated(mark=="junk"); b.mark:SetVertexColor(1,1,1)
-        if mark=="junk" then b.mark:SetTexture(marks.sell); b.mark:Show()
-        elseif mark and marks[mark] then b.mark:SetTexture(marks[mark]); b.mark:Show() end
+        if markerTexture then b.mark:SetTexture(markerTexture) end
+        for _,shadow in ipairs(b.markShadows) do
+            shadow:SetShown(markerTexture~=nil and markerTexture~=false)
+            if markerTexture then shadow:SetTexture(markerTexture) end
+        end
         b:SetAlpha(self:Matches(s,self.query) and 1 or 0.22)
         local start,duration,enable=C_Container.GetContainerItemCooldown(s.bag,s.slot)
         if b.Cooldown then CooldownFrame_Set(b.Cooldown,start,duration,enable) end
