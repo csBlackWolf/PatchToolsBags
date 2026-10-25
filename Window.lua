@@ -73,16 +73,9 @@ function Bags:CreateItemButton(parent,bag,slot)
     end
     b:SetID(slot); b:SetSize(36,36)
     b:RegisterForClicks("LeftButtonUp","RightButtonUp"); b:RegisterForDrag("LeftButton")
-    b:SetScript("OnClick",function(button,key)
-        if self.sorting then return end
-        local modified=IsModifiedClick()
-        local info=C_Container.GetContainerItemInfo(bag,slot)
-        if key~="LeftButton" and modified and IsModifiedClick("AUTOLOOTTOGGLE") and info and info.hasLoot then modified=false end
-        if modified then ContainerFrameItemButton_OnModifiedClick(button,key)
-        else ContainerFrameItemButton_OnClick(button,key) end
-    end)
-    b:SetScript("OnDragStart",function(button) if not self.sorting then ContainerFrameItemButton_OnDrag(button) end end)
-    b:SetScript("OnReceiveDrag",function(button) if not self.sorting then ContainerFrameItemButton_OnClick(button,"LeftButton") end end)
+    -- Keep the secure XML click/drag scripts inherited from Blizzard intact.
+    -- Replacing them with addon closures taints spell-targeted item use (pet
+    -- feeding, enchanting, etc.). Sorting disables the buttons instead.
     b.UpdateTooltip=function(button) self:Tooltip(button) end
     b:SetScript("OnEnter",b.UpdateTooltip)
     b:SetScript("OnLeave",function(button)

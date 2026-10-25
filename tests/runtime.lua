@@ -10,7 +10,12 @@ end
 function methods:GetNormalTexture() return nil end
 for name in ('SetHighlightTexture SetPushedTexture SetJustifyH SetBackdrop SetBackdropColor SetBackdropBorderColor SetSize SetHeight SetWidth SetPoint ClearAllPoints SetFrameStrata SetMovable SetClampedToScreen EnableMouse RegisterForClicks RegisterForDrag SetAutoFocus SetMaxLetters ClearFocus SetTextColor SetAlpha SetAllPoints SetFont SetValueStep SetObeyStepOnDrag StartMoving StopMovingOrSizing SetOwner SetBagItem SetMinMaxValues'):gmatch('%S+') do methods[name]=noop end
 function methods:SetPoint(...) self.point={...} end
-function methods:SetScript(key,fn) self.scripts[key]=fn end
+function methods:SetScript(key,fn)
+ if self.nativeScripts and (key=='OnClick' or key=='OnDragStart' or key=='OnReceiveDrag') then
+  error('Native container click/drag scripts must not be replaced by addon code')
+ end
+ self.scripts[key]=fn
+end
 function methods:RegisterEvent(event) self.events[event]=true end
 function methods:CreateFontString() return CreateFrame('FontString') end
 function methods:SetText(t) self.text=t end
@@ -42,7 +47,16 @@ function CreateFrame(kind,name,parent,template)
  frames[#frames+1]=f
  if name then _G[name]=f end
  if template=='OptionsSliderTemplate' then _G[name..'Low']=CreateFrame('FontString'); _G[name..'High']=CreateFrame('FontString') end
- if template=='ContainerFrameItemButtonTemplate' then _G[name..'Cooldown']=CreateFrame('Cooldown') end
+ if template=='ContainerFrameItemButtonTemplate' then
+  _G[name..'Cooldown']=CreateFrame('Cooldown')
+  f.nativeScripts=true
+  f.scripts.OnClick=function(button,key)
+   if IsModifiedClick() then ContainerFrameItemButton_OnModifiedClick(button,key)
+   else ContainerFrameItemButton_OnClick(button,key) end
+  end
+  f.scripts.OnDragStart=function(button) ContainerFrameItemButton_OnDrag(button) end
+  f.scripts.OnReceiveDrag=function(button) ContainerFrameItemButton_OnDrag(button) end
+ end
  return f
 end
 UIParent=CreateFrame('Frame'); UISpecialFrames={}; SlashCmdList={}; ITEM_QUALITY_COLORS={}
