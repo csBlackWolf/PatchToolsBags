@@ -43,7 +43,7 @@ or saved inventory data is automatically disabled or removed.
   count below. Hover for totals and all bag names in that section. Specialty bags
   use their equipped bag icon when available, with explicit quiver/ammo-pouch
   icons for those types. Section icons are 18px.
-- Compact spacing with full-size 36px item buttons, slot counts and money on one
+- Compact one-pixel spacing with full-size 36px item buttons, slot counts and money on one
   footer line, and a ? tooltip for marker explanations and quick help.
 - Item quality borders, stack counts and cooldowns.
 - Standard click/drag, Shift stack split and modified item link interactions
@@ -53,7 +53,8 @@ or saved inventory data is automatically disabled or removed.
 ## Limits and safety
 
 Visual sorting happens only on a Sort click and does not move inventory items
-or wait for the server. Physical
+or wait for the server. It also works in combat, with a chat notice that stack
+merging is skipped. No delayed merging is queued for the end of combat. Physical
 stack consolidation is explicit, outside combat, with an empty cursor. It stops for locked
 or uncached items, unexpected inventory changes or unconfirmed movements. Close
 the window to stop further movements; an already completed movement is retained.

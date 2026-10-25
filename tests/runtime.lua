@@ -153,7 +153,10 @@ loaded.Baganator=false
 ToggleBackpack(); assert(not Bags.window:IsShown())
 ToggleBackpack(); assert(Bags.window:IsShown())
 ToggleBag(5); assert(originalToggles==2,'Bank access must retain native behavior')
-combat=true; Bags:Sort(); assert(mutations==0)
+combat=true; Bags:Sort(); assert(mutations==0,'Combat sorting must never touch inventory')
+assert(not Bags.sorting,'Combat sorting must not start a merging job')
+assert(Bags.buttons['0:3'].point[4]==26 and Bags.buttons['0:3'].point[5]==-58,'Combat sorting must reorder the display')
+assert(inventory[0][3].stackCount==12 and inventory[1][1].stackCount==13,'Combat sorting must leave partial stacks untouched')
 combat=false; cursor={itemID=99}; Bags:Sort(); assert(mutations==0); cursor=nil
 Bags:Sort(); drain()
 assert(not Bags.sorting and not cursor)

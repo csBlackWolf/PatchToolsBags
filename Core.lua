@@ -54,16 +54,23 @@ function Bags:StopSort(message)
 end
 function Bags:Sort()
     if self.sorting then return end
-    if InCombatLockdown() or GetCursorInfo() then
-        self:Print("Sort outside combat with an empty cursor.","Bitte außerhalb des Kampfes mit leerem Mauszeiger sortieren."); return
+    if GetCursorInfo() then
+        self:Print("Sort with an empty cursor.","Bitte mit leerem Mauszeiger sortieren."); return
     end
     self:Sections(self:Scan(),true)
     self:RefreshWindow()
+    if InCombatLockdown() then
+        self:Print("Display sorted. Stack merging is skipped during combat.","Anzeige sortiert. Stapel werden im Kampf nicht zusammengeführt.")
+        return
+    end
     self.sorting=true
     local steps=0
     local function Step()
         if not self.sorting then return end
-        if InCombatLockdown() or GetCursorInfo() or not self.window:IsShown() then self:StopSort(); return end
+        if InCombatLockdown() then
+            self:StopSort({"Stack merging stopped because combat started.","Stapelzusammenführung wegen Kampfbeginn angehalten."}); return
+        end
+        if GetCursorInfo() or not self.window:IsShown() then self:StopSort(); return end
         local move,reason=self:NextMove(self:Scan())
         if reason then self:StopSort({"Items are still locked or loading. Please try again.","Gegenstände sind noch gesperrt oder werden geladen. Bitte erneut versuchen."}); return end
         if not move then self:StopSort(); return end

@@ -90,7 +90,7 @@ function Bags:CreateItemButton(parent,bag,slot)
     b.edge:SetTexture("Interface\\Common\\WhiteIconFrame")
     local icon=b.icon or _G[b:GetName().."IconTexture"]
     if icon then
-        icon:ClearAllPoints(); icon:SetPoint("TOPLEFT",2,-2); icon:SetPoint("BOTTOMRIGHT",-2,2)
+        icon:ClearAllPoints(); icon:SetPoint("TOPLEFT",1,-1); icon:SetPoint("BOTTOMRIGHT",-1,1)
     end
     b.mark=b:CreateTexture(nil,"OVERLAY",nil,7); b.mark:SetSize(13,13); b.mark:SetPoint("TOPLEFT",4,-6)
     b.markShadows={}
@@ -134,7 +134,7 @@ function Bags:CreateWindow()
     help:SetHeight(20); help:SetPoint("RIGHT",close,"LEFT",-4,0)
     help:SetScript("OnEnter",function()
         GameTooltip:SetOwner(help,"ANCHOR_TOP")
-        GameTooltip:SetText(self:T("Gold coin: sell · Grey coin: junk · ! Quest · Key: protected\nSort: order display and merge stacks.\nDrag the lower right corner to scale.","Goldmünze: Verkauf · Graue Münze: Schrott · ! Quest · Schlüssel: geschützt\nSortieren: Anzeige ordnen und Stapel zusammenführen.\nEcke unten rechts ziehen: skalieren."),1,0.82,0,1,true)
+        GameTooltip:SetText(self:T("Gold coin: sell · Grey coin: junk · ! Quest · Key: protected\nSort: order display and merge stacks. In combat: display only.\nDrag the lower right corner to scale.","Goldmünze: Verkauf · Graue Münze: Schrott · ! Quest · Schlüssel: geschützt\nSortieren: Anzeige ordnen und Stapel zusammenführen. Im Kampf nur die Anzeige.\nEcke unten rechts ziehen: skalieren."),1,0.82,0,1,true)
         GameTooltip:Show()
     end)
     help:SetScript("OnLeave",function() if GameTooltip:GetOwner()==help then GameTooltip:Hide() end end)
@@ -194,15 +194,15 @@ function Bags:RefreshWindow()
     local slots=self:Scan(); local f=self.window
     local sections=self:Sections(slots)
     local available=UIParent:GetHeight()/self.db.scale-160
-    local columns=math.max(self.db.columns,math.ceil(#slots/math.max(1,math.floor(available/38))))
+    local columns=math.max(self.db.columns,math.ceil(#slots/math.max(1,math.floor(available/37))))
     columns=math.min(20,columns)
     local function ContentHeight()
         local height=0
-        for _,section in ipairs(sections) do height=height+math.max(40,math.ceil(#section.slots/columns)*38)+4 end
+        for _,section in ipairs(sections) do height=height+math.max(40,math.ceil(#section.slots/columns)*37)+4 end
         return height
     end
     while ContentHeight()>available and columns<20 do columns=columns+1 end
-    f:SetSize(math.max(300,columns*38+30),ContentHeight()+80)
+    f:SetSize(math.max(300,columns*37+30),ContentHeight()+80)
     f:SetScale(self.db.scale)
     self.sectionBadges=self.sectionBadges or {}
     for _,badge in ipairs(self.sectionBadges) do badge:Hide() end
@@ -243,10 +243,10 @@ function Bags:RefreshWindow()
         badge.icon:SetTexture(self:SectionIcon(section)); badge.count:SetText(free)
         badge:ClearAllPoints(); badge:SetPoint("TOPLEFT",f,"TOPLEFT",3,-y); badge:Show()
         for i,slot in ipairs(section.slots) do
-            slot.viewX=26+((i-1)%columns)*38
-            slot.viewY=-y-math.floor((i-1)/columns)*38
+            slot.viewX=26+((i-1)%columns)*37
+            slot.viewY=-y-math.floor((i-1)/columns)*37
         end
-        y=y+math.max(40,math.ceil(#section.slots/columns)*38)+4
+        y=y+math.max(40,math.ceil(#section.slots/columns)*37)+4
     end
     local used=0
     for _,b in pairs(self.buttons) do b:Hide() end
