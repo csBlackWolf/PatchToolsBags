@@ -1,0 +1,12 @@
+## Interface: 11509, 16001
+## Title: PatchToolsBags
+## Notes: A compact shared bag with search, sorting and PatchTools item rules.
+## Author: Zen
+## Version: 0.1.0-alpha.1
+## Dependencies: PatchTools
+## IconTexture: Interface\AddOns\PatchTools\Media\Icon
+## SavedVariables: PatchToolsBagsDB
+Model.lua
+Core.lua
+Window.lua
+Options.lua
