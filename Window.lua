@@ -86,8 +86,12 @@ function Bags:CreateItemButton(parent,bag,slot)
     end)
     b:SetScript("OnUpdate",nil)
     b.edge=CreateFrame("Frame",nil,b,"BackdropTemplate"); b.edge:SetAllPoints()
-    b.edge:SetBackdrop({edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
-    b.mark=b:CreateTexture(nil,"OVERLAY",nil,7); b.mark:SetSize(13,13); b.mark:SetPoint("TOPLEFT",1,-1)
+    b.edge:SetBackdrop({edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=2})
+    local icon=b.icon or _G[b:GetName().."IconTexture"]
+    if icon then
+        icon:ClearAllPoints(); icon:SetPoint("TOPLEFT",2,-2); icon:SetPoint("BOTTOMRIGHT",-2,2)
+    end
+    b.mark=b:CreateTexture(nil,"OVERLAY",nil,7); b.mark:SetSize(13,13); b.mark:SetPoint("TOPLEFT",4,-4)
     return b
 end
 function Bags:CreateWindow()
@@ -122,7 +126,7 @@ function Bags:CreateWindow()
     help:SetHeight(20); help:SetPoint("RIGHT",close,"LEFT",-4,0)
     help:SetScript("OnEnter",function()
         GameTooltip:SetOwner(help,"ANCHOR_TOP")
-        GameTooltip:SetText(self:T("Coin: sell · Junk coin: junk · ! Quest · Key: protected\nSort: order display and merge stacks.\nDrag the lower right corner to scale.","Goldstück: Verkauf · Schrottsymbol: Müll · ! Quest · Schlüssel: geschützt\nSortieren: Anzeige ordnen und Stapel zusammenführen.\nEcke unten rechts ziehen: skalieren."),1,0.82,0,1,true)
+        GameTooltip:SetText(self:T("Gold coin: sell · Grey coin: junk · ! Quest · Key: protected\nSort: order display and merge stacks.\nDrag the lower right corner to scale.","Goldmünze: Verkauf · Graue Münze: Schrott · ! Quest · Schlüssel: geschützt\nSortieren: Anzeige ordnen und Stapel zusammenführen.\nEcke unten rechts ziehen: skalieren."),1,0.82,0,1,true)
         GameTooltip:Show()
     end)
     help:SetScript("OnLeave",function() if GameTooltip:GetOwner()==help then GameTooltip:Hide() end end)
@@ -166,8 +170,9 @@ function Bags:CreateWindow()
 end
 function Bags:SectionIcon(section)
     local fallback="Interface\\Icons\\INV_Misc_Bag_08"
-    if section.key=="general" or not ContainerIDToInventoryID then return fallback end
-    local inventory=ContainerIDToInventoryID(section.bag)
+    local inventoryID=C_Container.ContainerIDToInventoryID or ContainerIDToInventoryID
+    if section.key=="general" or not inventoryID then return fallback end
+    local inventory=inventoryID(section.bag)
     local link=GetInventoryItemLink and GetInventoryItemLink("player",inventory)
     local getInfo=C_Item and C_Item.GetItemInfo or GetItemInfo
     if link and getInfo then
@@ -198,8 +203,8 @@ function Bags:RefreshWindow()
         local badge=self.sectionBadges[index]
         if not badge then
             badge=CreateFrame("Frame",nil,f); badge:SetSize(26,40); badge:EnableMouse(true)
-            badge.icon=badge:CreateTexture(nil,"ARTWORK"); badge.icon:SetSize(24,24); badge.icon:SetPoint("TOP",0,0)
-            badge.count=self:Text(badge,"",10); badge.count:SetPoint("TOP",0,-27)
+            badge.icon=badge:CreateTexture(nil,"ARTWORK"); badge.icon:SetSize(18,18); badge.icon:SetPoint("TOP",0,-2)
+            badge.count=self:Text(badge,"",10); badge.count:SetPoint("TOP",0,-23)
             badge:SetScript("OnEnter",function()
                 GameTooltip:SetOwner(badge,"ANCHOR_LEFT")
                 GameTooltip:SetText(badge.title,1,0.82,0)
@@ -262,13 +267,15 @@ function Bags:RefreshWindow()
         if s.info then used=used+1 end
         local q=s.info and s.info.quality
         local color=q and q>=2 and ITEM_QUALITY_COLORS[q]
-        b.edge:SetBackdropBorderColor(color and color.r*0.65 or 0.25,color and color.g*0.65 or 0.22,color and color.b*0.65 or 0.15,1)
+        if s.mark=="quest" then b.edge:SetBackdropBorderColor(1,0.78,0.08,1)
+        else b.edge:SetBackdropBorderColor(color and color.r*0.9 or 0.25,color and color.g*0.9 or 0.22,color and color.b*0.9 or 0.15,1) end
         local mark=self.db.markers and s.mark
-        -- Junk keeps Blizzard's familiar junk symbol even when auto-sell makes
-        -- it eligible for sale. Quest and blocklist protection still win.
+        -- Use the same coin for both sale lists and junk, with grey denoting junk.
+        -- Quest and blocklist protection still win.
         if self.db.markers and s.info and s.info.quality==0 and mark~="quest" and mark~="protected" then mark="junk" end
         b.mark:Hide()
-        if mark=="junk" then b.mark:SetAtlas("bags-junkcoin"); b.mark:Show()
+        b.mark:SetDesaturated(mark=="junk"); b.mark:SetVertexColor(1,1,1)
+        if mark=="junk" then b.mark:SetTexture(marks.sell); b.mark:Show()
         elseif mark and marks[mark] then b.mark:SetTexture(marks[mark]); b.mark:Show() end
         b:SetAlpha(self:Matches(s,self.query) and 1 or 0.22)
         local start,duration,enable=C_Container.GetContainerItemCooldown(s.bag,s.slot)

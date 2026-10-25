@@ -36,11 +36,12 @@ or saved inventory data is automatically disabled or removed.
   within the same window. Specialty families remain separate for consolidation.
   No bank or equipped items are touched.
 - Native game icons mark quest items (!), protection (key), sale candidates
-  (gold coin) and junk (Blizzard junk symbol). Quest/protection take precedence.
-  Junk retains its junk symbol even when auto-sell is enabled.
+  (gold coin) and junk (the same coin in grey). Quest/protection take precedence.
+  Markers are inset from the two-pixel rarity border; quest items have a gold border.
 - Section names are replaced by a small bag icon on the left, with the free slot
   count below. Hover for totals and all bag names in that section. Specialty bags
-  use their equipped bag icon when available.
+  use their equipped bag icon when available, with explicit quiver/ammo-pouch
+  icons for those types. Section icons are 18px.
 - Compact spacing with full-size 36px item buttons, slot counts and money on one
   footer line, and a ? tooltip for marker explanations and quick help.
 - Item quality borders, stack counts and cooldowns.

@@ -8,7 +8,7 @@ function methods:SetNormalTexture(asset)
  assert(asset~=nil,'Classic requires a texture asset')
 end
 function methods:GetNormalTexture() return nil end
-for name in ('SetTexture SetAtlas AddLine SetHighlightTexture SetPushedTexture SetJustifyH SetBackdrop SetBackdropColor SetBackdropBorderColor SetSize SetHeight SetWidth SetPoint ClearAllPoints SetFrameStrata SetMovable SetClampedToScreen EnableMouse RegisterForClicks RegisterForDrag SetAutoFocus SetMaxLetters ClearFocus SetTextColor SetAlpha SetAllPoints SetFont SetValueStep SetObeyStepOnDrag StartMoving StopMovingOrSizing SetOwner SetBagItem SetMinMaxValues'):gmatch('%S+') do methods[name]=noop end
+for name in ('SetAtlas AddLine SetHighlightTexture SetPushedTexture SetJustifyH SetBackdrop SetBackdropColor SetBackdropBorderColor SetSize SetHeight SetWidth SetPoint ClearAllPoints SetFrameStrata SetMovable SetClampedToScreen EnableMouse RegisterForClicks RegisterForDrag SetAutoFocus SetMaxLetters ClearFocus SetTextColor SetAlpha SetAllPoints SetFont SetValueStep SetObeyStepOnDrag StartMoving StopMovingOrSizing SetOwner SetBagItem SetMinMaxValues'):gmatch('%S+') do methods[name]=noop end
 function methods:SetPoint(...) self.point={...} end
 function methods:SetScript(key,fn)
  if self.nativeScripts and (key=='OnClick' or key=='OnDragStart' or key=='OnReceiveDrag') then
@@ -24,6 +24,10 @@ function methods:GetText() return self.text or '' end
 function methods:GetFont() return 'font',12,'' end
 function methods:GetName() return self.name end
 function methods:GetParent() return self.parent end
+function methods:SetDesaturated(value) self.desaturated=value end
+function methods:SetVertexColor(...) self.vertex={...} end
+function methods:SetTexture(value) self.texture=value end
+function methods:SetBackdropBorderColor(...) self.border={...} end
 function methods:GetOwner() return self.owner end
 function methods:SetID(id) self.id=id end
 function methods:GetID() return self.id end
@@ -116,6 +120,18 @@ ToggleBackpack(); assert(originalToggles==1,'Other bag addon must retain access'
 SlashCmdList.PATCHTOOLSBAGS(''); assert(Bags.window:IsShown())
 drain()
 assert(mutations==0,'Opening the sorted display must not move any items')
+assert(Bags.buttons['0:1'].mark.texture=='Interface\\MoneyFrame\\UI-GoldIcon')
+assert(Bags.buttons['0:1'].mark.desaturated==true,'Junk coin must be grey')
+assert(Bags.buttons['0:1'].mark.point[3]==-4 and Bags.buttons['0:1'].mark.point[2]==4,'Marker must be inset from the border')
+local savedQuest=C_Container.GetContainerItemQuestInfo
+C_Container.GetContainerItemQuestInfo=function(bag,slot) return {isQuestItem=bag==0 and slot==3} end
+Bags:RefreshWindow()
+local questBorder=Bags.buttons['0:3'].edge.border
+assert(questBorder[1]==1 and questBorder[2]==0.78 and questBorder[3]==0.08,'Quest border must be gold')
+assert(Bags.buttons['0:3'].mark.desaturated==false,'Grey state must not leak to quest icons')
+C_Container.GetContainerItemQuestInfo=savedQuest
+Bags:RefreshWindow()
+
 local first=Bags.buttons['0:1']
 assert(first.point[4]==38 and first.point[5]==-58,'Opening must retain real slot order before an explicit sort')
 assert(Bags.sectionBadges[2].title:find('Specialty') or Bags.sectionBadges[2].title:find('Spezial'),'Specialty bags need a separate visible section')
@@ -181,7 +197,8 @@ print('PASS: module registration, settings/window creation, bag takeover, safe l
 
 
 local savedInfo=C_Item.GetItemInfo
-ContainerIDToInventoryID=function(bag) return bag+19 end
+ContainerIDToInventoryID=nil
+C_Container.ContainerIDToInventoryID=function(bag) return bag+19 end
 GetInventoryItemLink=function(_,slot) return tostring(slot) end
 C_Item.GetItemInfo=function(link)
  local subclass=link=='20' and 2 or 3
