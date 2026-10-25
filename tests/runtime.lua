@@ -93,6 +93,7 @@ IsModifiedClick=function() return false end
 GetMoney=function() return 100 end
 GetCoinTextureString=tostring
 ResetCursor=noop
+ShowInspectCursor=noop
 MouseIsOver=function() return false end
 SetItemButtonTexture=noop; SetItemButtonCount=noop; SetItemButtonDesaturated=noop; CooldownFrame_Set=noop
 hooksecurefunc=noop
@@ -244,3 +245,28 @@ assert(Bags:SectionIcon({key='general'}):find('INV_Misc_Bag_08',1,true))
 assert(Bags:SectionIcon({key='bag1',bag=1}):find('INV_Misc_Quiver_10',1,true))
 assert(Bags:SectionIcon({key='bag2',bag=2}):find('INV_Misc_Ammo_Bullet_01',1,true))
 C_Item.GetItemInfo=savedInfo
+
+local cursorMode,soldBag,soldSlot
+ResetCursor=function() cursorMode='default' end
+ShowInspectCursor=function() cursorMode='inspect' end
+C_Container.ShowContainerSellCursor=function(bag,slot) cursorMode='sell'; soldBag=bag; soldSlot=slot end
+MerchantFrame=CreateFrame('Frame'); MerchantFrame.selectedTab=1; MerchantFrame:Show()
+IsModifiedClick=function() return false end
+local itemButton=Bags.buttons['0:1']
+Bags:UpdateItemCursor(itemButton)
+assert(cursorMode=='sell' and soldBag==0 and soldSlot==1,'Merchant cursor must use the actual bag/slot')
+MerchantFrame.selectedTab=2
+Bags:UpdateItemCursor(itemButton); assert(cursorMode=='default','Buyback tab must not show a sale cursor')
+MerchantFrame.selectedTab=1
+SpellIsTargeting=function() return true end
+cursorMode='spell'; Bags:UpdateItemCursor(itemButton); assert(cursorMode=='spell','Pet feeding and item-target spells must retain their cursor')
+SpellIsTargeting=function() return false end
+InRepairMode=function() return true end
+cursorMode='repair'; Bags:UpdateItemCursor(itemButton); assert(cursorMode=='repair')
+InRepairMode=function() return false end
+MerchantFrame:Hide()
+Bags:UpdateItemCursor(itemButton); assert(cursorMode=='default','Closing the merchant must clear the sale cursor')
+IsModifiedClick=function(kind) return kind=='DRESSUP' end
+Bags:UpdateItemCursor(itemButton); assert(cursorMode=='inspect')
+IsModifiedClick=function() return false end
+print('PASS: sale, buyback, merchant close, repair, inspect and pet-feed cursor modes.')

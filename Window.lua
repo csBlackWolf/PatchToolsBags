@@ -27,7 +27,20 @@ function Bags:PlaceWindow()
 end
 -- Preserve the explicit anchor while Blizzard builds comparisons. Position the
 -- whole visible group afterwards, rather than triggering Classic's NONE branch.
+function Bags:UpdateItemCursor(button)
+    -- Let held items, spell targeting and the merchant repair mode keep their
+    -- own cursors. Showing the sale cursor does not perform an item action.
+    if GetCursorInfo() or (SpellIsTargeting and SpellIsTargeting())
+        or (InRepairMode and InRepairMode()) then return end
+    if not button.hasItem or self.sorting then ResetCursor(); return end
+    if IsModifiedClick("DRESSUP") then ShowInspectCursor()
+    elseif MerchantFrame and MerchantFrame:IsShown() and MerchantFrame.selectedTab==1 then
+        C_Container.ShowContainerSellCursor(button:GetParent():GetID(),button:GetID())
+    elseif button.readable then ShowInspectCursor()
+    else ResetCursor() end
+end
 function Bags:Tooltip(button)
+    self:UpdateItemCursor(button)
     if not button.hasItem or self.sorting then return end
     local tip=GameTooltip
     tip:SetOwner(button,"ANCHOR_PRESERVE")

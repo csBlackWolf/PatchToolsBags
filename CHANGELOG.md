@@ -1,3 +1,12 @@
+# PatchToolsBags 0.1.1 — 2026-10-25
+
+- Restore the merchant sale cursor when hovering over bag items while the merchant's selling tab is open.
+- Preserve spell-targeting cursors (including pet feeding), held-item cursors and repair mode; do not show a sale cursor on the buyback tab.
+- Native item click and drag handlers remain unchanged.
+
+Deutsch: Der Verkaufs-Mauszeiger erscheint jetzt auch im Taschenfenster beim
+Händler. Füttern, Reparieren und gehaltene Items behalten ihren passenden Zeiger.
+
 # PatchToolsBags 0.1.0 — 2026-10-25
 
 First public release. **PatchTools is required.** This is an early version;

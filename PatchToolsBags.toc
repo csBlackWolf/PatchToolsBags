@@ -4,7 +4,7 @@
 ## Author: Patch & Zen
 ## X-License: MIT
 ## X-Curse-Project-ID: 1766097
-## Version: 0.1.0
+## Version: 0.1.1
 ## Dependencies: PatchTools
 ## IconTexture: Interface\AddOns\PatchTools\Media\Icon
 ## SavedVariables: PatchToolsBagsDB

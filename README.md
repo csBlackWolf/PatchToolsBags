@@ -1,7 +1,7 @@
 # PatchToolsBags
 
 An independent optional bag module for [PatchTools](https://github.com/csBlackWolf/PatchTools).
-**0.1.0 is the first public release for Classic Era; bugs and unfinished behavior are possible.** Forever
+**0.1.1 is the first public release for Classic Era; bugs and unfinished behavior are possible.** Forever
 uses the additional profession bag when available, but needs its own in-game test.
 
 Public releases are built from `main`. The initial prototype history is preserved
