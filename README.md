@@ -38,7 +38,9 @@ or saved inventory data is automatically disabled or removed.
 - Q = quest item; P = protected by PatchTools; V = currently eligible for sale
   under PatchTools settings; J = junk without an active/known sale eligibility.
   Positive vendor price is required for V. Quest/protection take precedence.
-- Slot count, free slots, money, item quality borders, stack counts and cooldowns.
+- Compact spacing with full-size 36px item buttons, slot counts and money on one
+  footer line, and a ? tooltip for the marker legend and quick help.
+- Item quality borders, stack counts and cooldowns.
 - Standard click/drag, Shift stack split and modified item link interactions
   use Blizzard's container handlers. Selling/equipping requires normal user actions.
 - Settings register with PatchTools through extension API 1.

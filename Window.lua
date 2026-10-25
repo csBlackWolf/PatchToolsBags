@@ -96,18 +96,18 @@ function Bags:CreateWindow()
     self.window=f; f:Hide(); self:Backdrop(f)
     f:SetFrameStrata("HIGH"); f:SetMovable(true); f:SetClampedToScreen(true); f:EnableMouse(true)
     f:SetSize(424,400)
-    local header=CreateFrame("Frame",nil,f); header:SetPoint("TOPLEFT",1,-1); header:SetPoint("TOPRIGHT",-1,-1); header:SetHeight(35)
+    local header=CreateFrame("Frame",nil,f); header:SetPoint("TOPLEFT",1,-1); header:SetPoint("TOPRIGHT",-1,-1); header:SetHeight(27)
     header:EnableMouse(true); header:RegisterForDrag("LeftButton")
     header:SetScript("OnDragStart",function() f:StartMoving() end)
     header:SetScript("OnDragStop",function()
         f:StopMovingOrSizing(); self.db.x=f:GetLeft(); self.db.y=f:GetTop()
     end)
-    local title=self:Text(header,"PatchToolsBags",15); title:SetPoint("LEFT",10,0)
-    local close=self:Button(header,"×",24,function() f:Hide() end); close:SetPoint("RIGHT",-7,0)
-    f.sort=self:Button(f,self:T("Sort","Sortieren"),92,function() self:Sort(); self:QueueRefresh() end)
-    f.sort:SetPoint("TOPRIGHT",-10,-43)
+    local title=self:Text(header,"PatchToolsBags",14); title:SetPoint("LEFT",6,0)
+    local close=self:Button(header,"×",20,function() f:Hide() end); close:SetHeight(20); close:SetPoint("RIGHT",-5,0)
+    f.sort=self:Button(f,self:T("Sort","Sortieren"),86,function() self:Sort(); self:QueueRefresh() end)
+    f.sort:SetHeight(20); f.sort:SetPoint("TOPRIGHT",-6,-32)
     local search=CreateFrame("EditBox",nil,f,"InputBoxTemplate")
-    search:SetPoint("TOPLEFT",16,-44); search:SetPoint("RIGHT",f.sort,"LEFT",-14,0); search:SetHeight(22)
+    search:SetPoint("TOPLEFT",12,-32); search:SetPoint("RIGHT",f.sort,"LEFT",-12,0); search:SetHeight(20)
     search:SetAutoFocus(false); search:SetMaxLetters(80)
     search:SetScript("OnTextChanged",function() self.query=string.lower(search:GetText() or ""); self:QueueRefresh() end)
     search:SetScript("OnEscapePressed",function() search:ClearFocus() end)
@@ -116,12 +116,18 @@ function Bags:CreateWindow()
         GameTooltip:SetOwner(search,"ANCHOR_TOP"); GameTooltip:SetText(self:T("Search: name, item ID, quest, junk, sell, protected","Suche: Name, Item-ID, quest, schrott, verkauf, geschützt"),1,0.82,0,1,true); GameTooltip:Show()
     end)
     search:SetScript("OnLeave",function() if GameTooltip:GetOwner()==search then GameTooltip:Hide() end end)
-    f.summary=self:Text(f,"",11); f.summary:SetPoint("BOTTOMLEFT",10,29)
-    f.legend=self:Text(f,self:T("Q Quest   P Protected   V Sell   J Junk","Q Quest   P Geschützt   V Verkauf   J Schrott"),10)
-    f.legend:SetPoint("BOTTOMLEFT",10,10); f.legend:SetTextColor(0.7,0.66,0.55)
-    f.money=self:Text(f,"",11); f.money:SetPoint("BOTTOMRIGHT",-10,29)
+    f.summary=self:Text(f,"",11); f.summary:SetPoint("BOTTOMLEFT",6,7)
+    f.money=self:Text(f,"",11); f.money:SetPoint("BOTTOMRIGHT",-22,7)
+    local help=self:Button(header,"?",18,function() end)
+    help:SetHeight(20); help:SetPoint("RIGHT",close,"LEFT",-4,0)
+    help:SetScript("OnEnter",function()
+        GameTooltip:SetOwner(help,"ANCHOR_TOP")
+        GameTooltip:SetText(self:T("Q Quest · P Protected · V Sell · J Junk\nSort: order display and merge stacks.\nDrag the lower right corner to scale.","Q Quest · P Geschützt · V Verkauf · J Schrott\nSortieren: Anzeige ordnen und Stapel zusammenführen.\nEcke unten rechts ziehen: skalieren."),1,0.82,0,1,true)
+        GameTooltip:Show()
+    end)
+    help:SetScript("OnLeave",function() if GameTooltip:GetOwner()==help then GameTooltip:Hide() end end)
     local grip=CreateFrame("Button",nil,f)
-    grip:SetSize(20,20); grip:SetPoint("BOTTOMRIGHT",-1,1)
+    grip:SetSize(16,16); grip:SetPoint("BOTTOMRIGHT",-1,1)
     grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
     grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
     grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
@@ -162,19 +168,19 @@ function Bags:RefreshWindow()
     local slots=self:Scan(); local f=self.window
     local sections=self:Sections(slots)
     local available=UIParent:GetHeight()/self.db.scale-160
-    local columns=math.max(self.db.columns,math.ceil(#slots/math.max(1,math.floor(available/40))))
+    local columns=math.max(self.db.columns,math.ceil(#slots/math.max(1,math.floor(available/38))))
     columns=math.min(20,columns)
     local function ContentHeight()
         local height=0
-        for _,section in ipairs(sections) do height=height+24+math.ceil(#section.slots/columns)*40+8 end
+        for _,section in ipairs(sections) do height=height+16+math.ceil(#section.slots/columns)*38+4 end
         return height
     end
     while ContentHeight()>available and columns<20 do columns=columns+1 end
-    f:SetSize(math.max(400,columns*40+20),ContentHeight()+132)
+    f:SetSize(math.max(300,columns*38+10),ContentHeight()+80)
     f:SetScale(self.db.scale)
     self.sectionLabels=self.sectionLabels or {}
     for _,label in ipairs(self.sectionLabels) do label:Hide() end
-    local y=78
+    local y=58
     for index,section in ipairs(sections) do
         local label=self.sectionLabels[index]
         if not label then label=self:Text(f,"",11); self.sectionLabels[index]=label end
@@ -186,13 +192,13 @@ function Bags:RefreshWindow()
         local free=0
         for _,slot in ipairs(section.slots) do if not slot.info then free=free+1 end end
         label:SetText(title.." · "..free.." / "..#section.slots..self:T(" free"," frei"))
-        label:ClearAllPoints(); label:SetPoint("TOPLEFT",f,"TOPLEFT",10,-y); label:Show()
-        y=y+24
+        label:ClearAllPoints(); label:SetPoint("TOPLEFT",f,"TOPLEFT",6,-y); label:Show()
+        y=y+16
         for i,slot in ipairs(section.slots) do
-            slot.viewX=10+((i-1)%columns)*40
-            slot.viewY=-y-math.floor((i-1)/columns)*40
+            slot.viewX=6+((i-1)%columns)*38
+            slot.viewY=-y-math.floor((i-1)/columns)*38
         end
-        y=y+math.ceil(#section.slots/columns)*40+8
+        y=y+math.ceil(#section.slots/columns)*38+4
     end
     local used=0
     for _,b in pairs(self.buttons) do b:Hide() end
@@ -228,5 +234,4 @@ function Bags:RefreshWindow()
     f.summary:SetText(string.format(self:T("%d / %d slots · %d free","%d / %d Plätze · %d frei"),used,#slots,#slots-used))
     f.money:SetText(GetCoinTextureString(GetMoney()))
     f.sort.label:SetText(self.sorting and self:T("Sorting…","Sortiert…") or self:T("Sort","Sortieren"))
-    f.legend:SetShown(self.db.markers)
 end

@@ -116,7 +116,7 @@ SlashCmdList.PATCHTOOLSBAGS(''); assert(Bags.window:IsShown())
 drain()
 assert(mutations==0,'Opening the sorted display must not move any items')
 local first=Bags.buttons['0:1']
-assert(first.point[4]==10 and first.point[5]==-102,'Opening must retain real slot order before an explicit sort')
+assert(first.point[4]==6 and first.point[5]==-74,'Opening must retain real slot order before an explicit sort')
 assert(Bags.sectionLabels[2].text:find('Specialty') or Bags.sectionLabels[2].text:find('Spezial'),'Specialty bags need a separate visible section')
 local clicked
 ContainerFrameItemButton_OnClick=function(button,key) clicked={button:GetParent():GetID(),button:GetID(),key} end
@@ -134,7 +134,7 @@ assert(inventory[0][1].itemID==3 and inventory[0][1].stackCount==3,'Non-stack it
 assert(inventory[0][3].itemID==1 and inventory[0][3].stackCount==20)
 assert(inventory[1][1].itemID==1 and inventory[1][1].stackCount==5)
 assert(inventory[2][1].itemID==9,'Specialty bag must retain its family')
-assert(Bags.buttons['0:3'].point[4]==10 and Bags.buttons['0:3'].point[5]==-102,'Sort click must order the normal-bag section')
+assert(Bags.buttons['0:3'].point[4]==6 and Bags.buttons['0:3'].point[5]==-74,'Sort click must order the normal-bag section')
 assert(Bags.buttons['2:1'].point[5]<Bags.buttons['0:3'].point[5],'Specialty slots must be below normal bags')
 
 local previous=mutations; Bags:Sort(); drain(); assert(mutations==previous,'Already sorted inventory should do no work')
