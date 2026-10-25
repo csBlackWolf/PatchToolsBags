@@ -64,6 +64,8 @@ function Bags:CreateItemButton(parent,bag,slot)
     -- The standard template supplies stack splitting, drag and item behavior.
     local b=CreateFrame("Button", "PatchToolsBagsItem"..bag.."_"..slot,parent,"ContainerFrameItemButtonTemplate")
     b.Cooldown=_G[b:GetName().."Cooldown"]
+    local normal=b:GetNormalTexture()
+    if normal then normal:Hide() end
     -- The native container template leaves its store-purchase highlight visible.
     -- Blizzard's normal refresh hides it; our own renderer must do that too.
     for _,key in ipairs({"BattlepayItemTexture","NewItemTexture","flash"}) do
@@ -182,13 +184,18 @@ function Bags:RefreshWindow()
         if not b then b=self:CreateItemButton(self.bagParents[s.bag],s.bag,s.slot); b.ptBags=true; self.buttons[key]=b end
         b:ClearAllPoints(); b:SetPoint("TOPLEFT",f,"TOPLEFT",10+((i-1)%columns)*40,-78-math.floor((i-1)/columns)*40)
         b:Show(); b.hasItem=s.info~=nil; b.readable=s.info and s.info.isReadable
-        SetItemButtonTexture(b,s.info and s.info.iconFileID or "Interface\\Buttons\\UI-EmptySlot-Disabled")
+        SetItemButtonTexture(b,s.info and s.info.iconFileID or "Interface\\Buttons\\WHITE8X8")
+        local icon=b.icon or _G[b:GetName().."IconTexture"]
+        if icon then
+            if s.info then icon:SetVertexColor(1,1,1)
+            else icon:SetVertexColor(0.065,0.055,0.04) end
+        end
         SetItemButtonCount(b,s.info and s.info.stackCount or 0)
         SetItemButtonDesaturated(b,s.info and s.info.isLocked or false)
         if s.info then used=used+1 end
         local q=s.info and s.info.quality
-        local color=q and ITEM_QUALITY_COLORS[q]
-        b.edge:SetBackdropBorderColor(color and color.r or 0.25,color and color.g or 0.22,color and color.b or 0.15,1)
+        local color=q and q>=2 and ITEM_QUALITY_COLORS[q]
+        b.edge:SetBackdropBorderColor(color and color.r*0.65 or 0.25,color and color.g*0.65 or 0.22,color and color.b*0.65 or 0.15,1)
         local mark=self.db.markers and marks[s.mark]
         b.mark:SetText(mark and mark[1] or ""); if mark then b.mark:SetTextColor(mark[2],mark[3],mark[4]) end
         b:SetAlpha(self:Matches(s,self.query) and 1 or 0.22)
