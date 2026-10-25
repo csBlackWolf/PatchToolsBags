@@ -64,6 +64,11 @@ function Bags:CreateItemButton(parent,bag,slot)
     -- The standard template supplies stack splitting, drag and item behavior.
     local b=CreateFrame("Button", "PatchToolsBagsItem"..bag.."_"..slot,parent,"ContainerFrameItemButtonTemplate")
     b.Cooldown=_G[b:GetName().."Cooldown"]
+    -- The native container template leaves its store-purchase highlight visible.
+    -- Blizzard's normal refresh hides it; our own renderer must do that too.
+    for _,key in ipairs({"BattlepayItemTexture","NewItemTexture","flash"}) do
+        if b[key] then b[key]:Hide() end
+    end
     b:SetID(slot); b:SetSize(36,36)
     b:RegisterForClicks("LeftButtonUp","RightButtonUp"); b:RegisterForDrag("LeftButton")
     b:SetScript("OnClick",function(button,key)
