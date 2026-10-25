@@ -249,7 +249,7 @@ function Bags:RefreshWindow()
         y=y+math.max(40,math.ceil(#section.slots/columns)*37)+4
     end
     local used=0
-    for _,b in pairs(self.buttons) do b:Hide() end
+    local active={}
     local marks={
         quest="Interface\\GossipFrame\\AvailableQuestIcon",
         protected="Interface\\Icons\\INV_Misc_Key_03",
@@ -260,10 +260,17 @@ function Bags:RefreshWindow()
             local p=CreateFrame("Frame",nil,f); p:SetAllPoints(); p:SetID(s.bag); self.bagParents[s.bag]=p
         end
         local key=s.bag..":"..s.slot
+        active[key]=true
         local b=self.buttons[key]
         if not b then b=self:CreateItemButton(self.bagParents[s.bag],s.bag,s.slot); b.ptBags=true; self.buttons[key]=b end
-        b:ClearAllPoints(); b:SetPoint("TOPLEFT",f,"TOPLEFT",s.viewX,s.viewY)
-        b:Show(); b.hasItem=s.info~=nil; b.readable=s.info and s.info.isReadable
+        if b.viewX~=s.viewX or b.viewY~=s.viewY then
+            b:ClearAllPoints(); b:SetPoint("TOPLEFT",f,"TOPLEFT",s.viewX,s.viewY)
+            b.viewX=s.viewX; b.viewY=s.viewY
+        end
+        -- Lock/count events fire while an item is being dragged. Hiding its
+        -- source button here cancels the drag gesture before the mouse release.
+        if not b:IsShown() then b:Show() end
+        b.hasItem=s.info~=nil; b.readable=s.info and s.info.isReadable
         SetItemButtonTexture(b,s.info and s.info.iconFileID or "Interface\\Buttons\\WHITE8X8")
         local icon=b.icon or _G[b:GetName().."IconTexture"]
         if icon then
@@ -294,6 +301,7 @@ function Bags:RefreshWindow()
         if b.Cooldown then CooldownFrame_Set(b.Cooldown,start,duration,enable) end
         if self.sorting then b:Disable() else b:Enable() end
     end
+    for key,b in pairs(self.buttons) do if not active[key] and b:IsShown() then b:Hide() end end
     f.summary:SetText(string.format(self:T("%d / %d slots · %d free","%d / %d Plätze · %d frei"),used,#slots,#slots-used))
     f.money:SetText(GetCoinTextureString(GetMoney()))
     f.sort.label:SetText(self.sorting and self:T("Sorting…","Sortiert…") or self:T("Sort","Sortieren"))

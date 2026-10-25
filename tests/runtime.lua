@@ -40,7 +40,7 @@ function methods:GetTop() return 700 end
 function methods:SetChecked(value) self.checked=value end
 function methods:GetChecked() return self.checked end
 function methods:SetValue(value) self.value=value; if self.scripts.OnValueChanged then self.scripts.OnValueChanged(self,value) end end
-function methods:Hide() self.shown=false; if self.scripts.OnHide then self.scripts.OnHide(self) end end
+function methods:Hide() self.hideCount=(self.hideCount or 0)+1; self.shown=false; if self.scripts.OnHide then self.scripts.OnHide(self) end end
 function methods:Show() self.shown=true; if self.scripts.OnShow then self.scripts.OnShow(self) end end
 function methods:SetShown(value) if value then self:Show() else self:Hide() end end
 function methods:IsShown() return self.shown end
@@ -173,7 +173,11 @@ local sourceX,sourceY=source.point[4],source.point[5]
 local targetX,targetY=target.point[4],target.point[5]
 ContainerFrameItemButton_OnDrag=function(button) C_Container.PickupContainerItem(button:GetParent():GetID(),button:GetID()) end
 ContainerFrameItemButton_OnClick=function(button) C_Container.PickupContainerItem(button:GetParent():GetID(),button:GetID()) end
+local sourceHides=source.hideCount or 0
 source.scripts.OnDragStart(source)
+eventFrame.scripts.OnEvent(eventFrame,'ITEM_LOCK_CHANGED')
+drain()
+assert(source:IsShown() and (source.hideCount or 0)==sourceHides,'Inventory refresh must not hide the active drag source')
 target.scripts.OnReceiveDrag(target)
 assert(not cursor and not inventory[0][3] and inventory[0][2].itemID==1,'Drag/drop must move the selected item')
 Bags:RefreshWindow()
