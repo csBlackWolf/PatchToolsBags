@@ -164,6 +164,19 @@ function Bags:CreateWindow()
     UISpecialFrames[#UISpecialFrames+1]="PatchToolsBagsWindow"
     self:PlaceWindow()
 end
+function Bags:SectionIcon(section)
+    local fallback="Interface\\Icons\\INV_Misc_Bag_08"
+    if section.key=="general" or not ContainerIDToInventoryID then return fallback end
+    local inventory=ContainerIDToInventoryID(section.bag)
+    local link=GetInventoryItemLink and GetInventoryItemLink("player",inventory)
+    local getInfo=C_Item and C_Item.GetItemInfo or GetItemInfo
+    if link and getInfo then
+        local class,subclass=select(12,getInfo(link))
+        if class==11 and subclass==2 then return "Interface\\Icons\\INV_Misc_Quiver_10" end
+        if class==11 and subclass==3 then return "Interface\\Icons\\INV_Misc_Ammo_Bullet_01" end
+    end
+    return (GetInventoryItemTexture and GetInventoryItemTexture("player",inventory)) or fallback
+end
 function Bags:RefreshWindow()
     local slots=self:Scan(); local f=self.window
     local sections=self:Sections(slots)
@@ -214,11 +227,7 @@ function Bags:RefreshWindow()
             badge.bagLines[#badge.bagLines+1]=name..": "..count.free.." / "..count.total..self:T(" free"," frei")
         end
         badge.detail=string.format(self:T("%d free / %d slots","%d frei / %d Plätze"),free,#section.slots)
-        local texture="Interface\\Icons\\INV_Misc_Bag_08"
-        if section.key~="general" and ContainerIDToInventoryID and GetInventoryItemTexture then
-            texture=GetInventoryItemTexture("player",ContainerIDToInventoryID(section.bag)) or texture
-        end
-        badge.icon:SetTexture(texture); badge.count:SetText(free)
+        badge.icon:SetTexture(self:SectionIcon(section)); badge.count:SetText(free)
         badge:ClearAllPoints(); badge:SetPoint("TOPLEFT",f,"TOPLEFT",6,-y); badge:Show()
         for i,slot in ipairs(section.slots) do
             slot.viewX=38+((i-1)%columns)*38

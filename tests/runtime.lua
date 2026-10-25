@@ -179,3 +179,15 @@ for _,x in ipairs({10,700,1700}) do
 end
 print('PASS: module registration, settings/window creation, bag takeover, safe live sorting, no-op sort, reset.')
 
+
+local savedInfo=C_Item.GetItemInfo
+ContainerIDToInventoryID=function(bag) return bag+19 end
+GetInventoryItemLink=function(_,slot) return tostring(slot) end
+C_Item.GetItemInfo=function(link)
+ local subclass=link=='20' and 2 or 3
+ return 'Bag',link,1,1,1,'Quiver','',1,'',1,1,11,subclass
+end
+assert(Bags:SectionIcon({key='general'}):find('INV_Misc_Bag_08',1,true))
+assert(Bags:SectionIcon({key='bag1',bag=1}):find('INV_Misc_Quiver_10',1,true))
+assert(Bags:SectionIcon({key='bag2',bag=2}):find('INV_Misc_Ammo_Bullet_01',1,true))
+C_Item.GetItemInfo=savedInfo
