@@ -87,7 +87,7 @@ function Bags:CreateItemButton(parent,bag,slot)
     b:SetScript("OnUpdate",nil)
     b.edge=CreateFrame("Frame",nil,b,"BackdropTemplate"); b.edge:SetAllPoints()
     b.edge:SetBackdrop({edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
-    b.mark=self:Text(b,"",11); b.mark:SetPoint("TOPLEFT",3,-2)
+    b.mark=b:CreateTexture(nil,"OVERLAY",nil,7); b.mark:SetSize(13,13); b.mark:SetPoint("TOPLEFT",1,-1)
     return b
 end
 function Bags:CreateWindow()
@@ -122,7 +122,7 @@ function Bags:CreateWindow()
     help:SetHeight(20); help:SetPoint("RIGHT",close,"LEFT",-4,0)
     help:SetScript("OnEnter",function()
         GameTooltip:SetOwner(help,"ANCHOR_TOP")
-        GameTooltip:SetText(self:T("Q Quest · P Protected · V Sell · J Junk\nSort: order display and merge stacks.\nDrag the lower right corner to scale.","Q Quest · P Geschützt · V Verkauf · J Schrott\nSortieren: Anzeige ordnen und Stapel zusammenführen.\nEcke unten rechts ziehen: skalieren."),1,0.82,0,1,true)
+        GameTooltip:SetText(self:T("Coin: sell · Junk coin: junk · ! Quest · Key: protected\nSort: order display and merge stacks.\nDrag the lower right corner to scale.","Goldstück: Verkauf · Schrottsymbol: Müll · ! Quest · Schlüssel: geschützt\nSortieren: Anzeige ordnen und Stapel zusammenführen.\nEcke unten rechts ziehen: skalieren."),1,0.82,0,1,true)
         GameTooltip:Show()
     end)
     help:SetScript("OnLeave",function() if GameTooltip:GetOwner()==help then GameTooltip:Hide() end end)
@@ -172,37 +172,67 @@ function Bags:RefreshWindow()
     columns=math.min(20,columns)
     local function ContentHeight()
         local height=0
-        for _,section in ipairs(sections) do height=height+16+math.ceil(#section.slots/columns)*38+4 end
+        for _,section in ipairs(sections) do height=height+math.max(40,math.ceil(#section.slots/columns)*38)+4 end
         return height
     end
     while ContentHeight()>available and columns<20 do columns=columns+1 end
-    f:SetSize(math.max(300,columns*38+10),ContentHeight()+80)
+    f:SetSize(math.max(300,columns*38+42),ContentHeight()+80)
     f:SetScale(self.db.scale)
-    self.sectionLabels=self.sectionLabels or {}
-    for _,label in ipairs(self.sectionLabels) do label:Hide() end
+    self.sectionBadges=self.sectionBadges or {}
+    for _,badge in ipairs(self.sectionBadges) do badge:Hide() end
     local y=58
     for index,section in ipairs(sections) do
-        local label=self.sectionLabels[index]
-        if not label then label=self:Text(f,"",11); self.sectionLabels[index]=label end
-        local title=self:T("Bags","Taschen")
-        if section.key~="general" then
-            local getName=C_Container.GetBagName or GetBagName
-            title=(getName and getName(section.bag)) or self:T("Specialty bag","Spezialtasche")
+        local badge=self.sectionBadges[index]
+        if not badge then
+            badge=CreateFrame("Frame",nil,f); badge:SetSize(26,40); badge:EnableMouse(true)
+            badge.icon=badge:CreateTexture(nil,"ARTWORK"); badge.icon:SetSize(24,24); badge.icon:SetPoint("TOP",0,0)
+            badge.count=self:Text(badge,"",10); badge.count:SetPoint("TOP",0,-27)
+            badge:SetScript("OnEnter",function()
+                GameTooltip:SetOwner(badge,"ANCHOR_LEFT")
+                GameTooltip:SetText(badge.title,1,0.82,0)
+                GameTooltip:AddLine(badge.detail,1,1,1,true)
+                for _,line in ipairs(badge.bagLines) do GameTooltip:AddLine(line,0.8,0.8,0.8,true) end
+                GameTooltip:Show()
+            end)
+            badge:SetScript("OnLeave",function() if GameTooltip:GetOwner()==badge then GameTooltip:Hide() end end)
+            self.sectionBadges[index]=badge
         end
-        local free=0
-        for _,slot in ipairs(section.slots) do if not slot.info then free=free+1 end end
-        label:SetText(title.." · "..free.." / "..#section.slots..self:T(" free"," frei"))
-        label:ClearAllPoints(); label:SetPoint("TOPLEFT",f,"TOPLEFT",6,-y); label:Show()
-        y=y+16
+        local getName=C_Container.GetBagName or GetBagName
+        badge.title=section.key=="general" and self:T("Combined bags","Zusammengefasste Taschen")
+            or (getName and getName(section.bag)) or self:T("Specialty bag","Spezialtasche")
+        local free,bagOrder,counts=0,{},{}
+        for _,slot in ipairs(section.slots) do
+            if not counts[slot.bag] then counts[slot.bag]={total=0,free=0}; bagOrder[#bagOrder+1]=slot.bag end
+            counts[slot.bag].total=counts[slot.bag].total+1
+            if not slot.info then free=free+1; counts[slot.bag].free=counts[slot.bag].free+1 end
+        end
+        table.sort(bagOrder)
+        badge.bagLines={}
+        for _,bag in ipairs(bagOrder) do
+            local count=counts[bag]
+            local name=(getName and getName(bag)) or (bag==0 and self:T("Backpack","Rucksack") or self:T("Bag ","Tasche ")..bag)
+            badge.bagLines[#badge.bagLines+1]=name..": "..count.free.." / "..count.total..self:T(" free"," frei")
+        end
+        badge.detail=string.format(self:T("%d free / %d slots","%d frei / %d Plätze"),free,#section.slots)
+        local texture="Interface\\Icons\\INV_Misc_Bag_08"
+        if section.key~="general" and ContainerIDToInventoryID and GetInventoryItemTexture then
+            texture=GetInventoryItemTexture("player",ContainerIDToInventoryID(section.bag)) or texture
+        end
+        badge.icon:SetTexture(texture); badge.count:SetText(free)
+        badge:ClearAllPoints(); badge:SetPoint("TOPLEFT",f,"TOPLEFT",6,-y); badge:Show()
         for i,slot in ipairs(section.slots) do
-            slot.viewX=6+((i-1)%columns)*38
+            slot.viewX=38+((i-1)%columns)*38
             slot.viewY=-y-math.floor((i-1)/columns)*38
         end
-        y=y+math.ceil(#section.slots/columns)*38+4
+        y=y+math.max(40,math.ceil(#section.slots/columns)*38)+4
     end
     local used=0
     for _,b in pairs(self.buttons) do b:Hide() end
-    local marks={quest={"Q",1,0.85,0.2},protected={"P",0.3,0.8,1},sell={"V",1,0.7,0.1},junk={"J",0.7,0.7,0.7}}
+    local marks={
+        quest="Interface\\GossipFrame\\AvailableQuestIcon",
+        protected="Interface\\Icons\\INV_Misc_Key_03",
+        sell="Interface\\MoneyFrame\\UI-GoldIcon",
+    }
     for i,s in ipairs(slots) do
         if not self.bagParents[s.bag] then
             local p=CreateFrame("Frame",nil,f); p:SetAllPoints(); p:SetID(s.bag); self.bagParents[s.bag]=p
@@ -224,8 +254,13 @@ function Bags:RefreshWindow()
         local q=s.info and s.info.quality
         local color=q and q>=2 and ITEM_QUALITY_COLORS[q]
         b.edge:SetBackdropBorderColor(color and color.r*0.65 or 0.25,color and color.g*0.65 or 0.22,color and color.b*0.65 or 0.15,1)
-        local mark=self.db.markers and marks[s.mark]
-        b.mark:SetText(mark and mark[1] or ""); if mark then b.mark:SetTextColor(mark[2],mark[3],mark[4]) end
+        local mark=self.db.markers and s.mark
+        -- Junk keeps Blizzard's familiar junk symbol even when auto-sell makes
+        -- it eligible for sale. Quest and blocklist protection still win.
+        if self.db.markers and s.info and s.info.quality==0 and mark~="quest" and mark~="protected" then mark="junk" end
+        b.mark:Hide()
+        if mark=="junk" then b.mark:SetAtlas("bags-junkcoin"); b.mark:Show()
+        elseif mark and marks[mark] then b.mark:SetTexture(marks[mark]); b.mark:Show() end
         b:SetAlpha(self:Matches(s,self.query) and 1 or 0.22)
         local start,duration,enable=C_Container.GetContainerItemCooldown(s.bag,s.slot)
         if b.Cooldown then CooldownFrame_Set(b.Cooldown,start,duration,enable) end

@@ -35,11 +35,14 @@ or saved inventory data is automatically disabled or removed.
 - General bags share a section; each specialty bag has its own named section
   within the same window. Specialty families remain separate for consolidation.
   No bank or equipped items are touched.
-- Q = quest item; P = protected by PatchTools; V = currently eligible for sale
-  under PatchTools settings; J = junk without an active/known sale eligibility.
-  Positive vendor price is required for V. Quest/protection take precedence.
+- Native game icons mark quest items (!), protection (key), sale candidates
+  (gold coin) and junk (Blizzard junk symbol). Quest/protection take precedence.
+  Junk retains its junk symbol even when auto-sell is enabled.
+- Section names are replaced by a small bag icon on the left, with the free slot
+  count below. Hover for totals and all bag names in that section. Specialty bags
+  use their equipped bag icon when available.
 - Compact spacing with full-size 36px item buttons, slot counts and money on one
-  footer line, and a ? tooltip for the marker legend and quick help.
+  footer line, and a ? tooltip for marker explanations and quick help.
 - Item quality borders, stack counts and cooldowns.
 - Standard click/drag, Shift stack split and modified item link interactions
   use Blizzard's container handlers. Selling/equipping requires normal user actions.

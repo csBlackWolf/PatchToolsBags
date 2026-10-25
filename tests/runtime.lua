@@ -8,7 +8,7 @@ function methods:SetNormalTexture(asset)
  assert(asset~=nil,'Classic requires a texture asset')
 end
 function methods:GetNormalTexture() return nil end
-for name in ('SetHighlightTexture SetPushedTexture SetJustifyH SetBackdrop SetBackdropColor SetBackdropBorderColor SetSize SetHeight SetWidth SetPoint ClearAllPoints SetFrameStrata SetMovable SetClampedToScreen EnableMouse RegisterForClicks RegisterForDrag SetAutoFocus SetMaxLetters ClearFocus SetTextColor SetAlpha SetAllPoints SetFont SetValueStep SetObeyStepOnDrag StartMoving StopMovingOrSizing SetOwner SetBagItem SetMinMaxValues'):gmatch('%S+') do methods[name]=noop end
+for name in ('SetTexture SetAtlas AddLine SetHighlightTexture SetPushedTexture SetJustifyH SetBackdrop SetBackdropColor SetBackdropBorderColor SetSize SetHeight SetWidth SetPoint ClearAllPoints SetFrameStrata SetMovable SetClampedToScreen EnableMouse RegisterForClicks RegisterForDrag SetAutoFocus SetMaxLetters ClearFocus SetTextColor SetAlpha SetAllPoints SetFont SetValueStep SetObeyStepOnDrag StartMoving StopMovingOrSizing SetOwner SetBagItem SetMinMaxValues'):gmatch('%S+') do methods[name]=noop end
 function methods:SetPoint(...) self.point={...} end
 function methods:SetScript(key,fn)
  if self.nativeScripts and (key=='OnClick' or key=='OnDragStart' or key=='OnReceiveDrag') then
@@ -18,6 +18,7 @@ function methods:SetScript(key,fn)
 end
 function methods:RegisterEvent(event) self.events[event]=true end
 function methods:CreateFontString() return CreateFrame('FontString') end
+function methods:CreateTexture() return CreateFrame('Texture') end
 function methods:SetText(t) self.text=t end
 function methods:GetText() return self.text or '' end
 function methods:GetFont() return 'font',12,'' end
@@ -116,8 +117,11 @@ SlashCmdList.PATCHTOOLSBAGS(''); assert(Bags.window:IsShown())
 drain()
 assert(mutations==0,'Opening the sorted display must not move any items')
 local first=Bags.buttons['0:1']
-assert(first.point[4]==6 and first.point[5]==-74,'Opening must retain real slot order before an explicit sort')
-assert(Bags.sectionLabels[2].text:find('Specialty') or Bags.sectionLabels[2].text:find('Spezial'),'Specialty bags need a separate visible section')
+assert(first.point[4]==38 and first.point[5]==-58,'Opening must retain real slot order before an explicit sort')
+assert(Bags.sectionBadges[2].title:find('Specialty') or Bags.sectionBadges[2].title:find('Spezial'),'Specialty bags need a separate visible section')
+assert(Bags.sectionBadges[1].count.text==3,'Combined badge must count free slots')
+assert(#Bags.sectionBadges[1].bagLines==2,'Combined tooltip must list every included bag')
+assert(#Bags.sectionBadges[2].bagLines==1,'Specialty tooltip must remain separate')
 local clicked
 ContainerFrameItemButton_OnClick=function(button,key) clicked={button:GetParent():GetID(),button:GetID(),key} end
 first.scripts.OnClick(first,'RightButton')
@@ -134,7 +138,7 @@ assert(inventory[0][1].itemID==3 and inventory[0][1].stackCount==3,'Non-stack it
 assert(inventory[0][3].itemID==1 and inventory[0][3].stackCount==20)
 assert(inventory[1][1].itemID==1 and inventory[1][1].stackCount==5)
 assert(inventory[2][1].itemID==9,'Specialty bag must retain its family')
-assert(Bags.buttons['0:3'].point[4]==6 and Bags.buttons['0:3'].point[5]==-74,'Sort click must order the normal-bag section')
+assert(Bags.buttons['0:3'].point[4]==38 and Bags.buttons['0:3'].point[5]==-58,'Sort click must order the normal-bag section')
 assert(Bags.buttons['2:1'].point[5]<Bags.buttons['0:3'].point[5],'Specialty slots must be below normal bags')
 
 local previous=mutations; Bags:Sort(); drain(); assert(mutations==previous,'Already sorted inventory should do no work')
