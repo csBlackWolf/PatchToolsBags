@@ -29,8 +29,13 @@ function Bags:BuildOptions(parent)
     end
     Slider(-255,"Window scale","Fensterskalierung","scale",0.65,1.3,0.05)
     Slider(-345,"Columns","Spalten","columns",6,16,1)
-    local open=self:Button(parent,self:T("Open bags","Taschen öffnen"),180,function() self:CreateWindow(); self.window:Show() end)
-    open:SetPoint("TOPLEFT",0,-435)
+    local reset=self:Button(parent,self:T("Reset position and size","Position und Größe zurücksetzen"),300,function()
+        self.db.x=nil; self.db.y=nil; self.db.scale=1; self.db.columns=10
+        PatchToolsBagsOptionscale:SetValue(1)
+        PatchToolsBagsOptioncolumns:SetValue(10)
+        self:CreateWindow(); self:PlaceWindow(); self:QueueRefresh()
+    end)
+    reset:SetPoint("TOPLEFT",0,-435)
     local note=self:Text(parent,self:T("Drag the title to move; drag the lower right corner to scale. Reset: /ptbags reset\nSort orders the display and merges partial stacks; manual placement is retained. Quest and protected items are never marked for sale.","Titelleiste ziehen: verschieben. Ecke unten rechts ziehen: skalieren. Reset: /ptbags reset\nSortieren ordnet die Anzeige und führt Teilstapel zusammen. Manuelle Plätze bleiben bestehen. Questitems und geschützte Items erhalten keine Verkaufsmarkierung."),12)
     note:SetPoint("TOPLEFT",0,-490); note:SetWidth(560); note:SetJustifyH("LEFT")
 end
