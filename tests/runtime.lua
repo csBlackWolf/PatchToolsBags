@@ -7,7 +7,14 @@ local function noop() end
 function methods:SetNormalTexture(asset)
  assert(asset~=nil,'Classic requires a texture asset')
 end
-function methods:GetNormalTexture() return nil end
+function methods:GetNormalTexture()
+ if not self.normal then self.normal=CreateFrame('Texture') end
+ return self.normal
+end
+function methods:GetPushedTexture()
+ if not self.pushed then self.pushed=CreateFrame('Texture') end
+ return self.pushed
+end
 for name in ('SetAtlas AddLine SetHighlightTexture SetPushedTexture SetJustifyH SetBackdrop SetBackdropColor SetBackdropBorderColor SetSize SetHeight SetWidth SetPoint ClearAllPoints SetFrameStrata SetMovable SetClampedToScreen EnableMouse RegisterForClicks RegisterForDrag SetAutoFocus SetMaxLetters ClearFocus SetTextColor SetAlpha SetAllPoints SetFont SetValueStep SetObeyStepOnDrag StartMoving StopMovingOrSizing SetOwner SetBagItem SetMinMaxValues'):gmatch('%S+') do methods[name]=noop end
 function methods:SetPoint(...) self.point={...} end
 function methods:SetScript(key,fn)
@@ -34,6 +41,7 @@ function methods:GetFont() return 'font',12,'' end
 function methods:GetName() return self.name end
 function methods:GetParent() return self.parent end
 function methods:SetDesaturated(value) self.desaturated=value end
+function methods:SetAlpha(value) self.alpha=value end
 function methods:SetVertexColor(...) self.vertex={...} end
 function methods:SetTexture(value) self.texture=value end
 function methods:SetBackdropBorderColor(...) self.border={...} end
@@ -183,13 +191,15 @@ local sourceX,sourceY=source.point[4],source.point[5]
 local targetX,targetY=target.point[4],target.point[5]
 ContainerFrameItemButton_OnDrag=function(button) C_Container.PickupContainerItem(button:GetParent():GetID(),button:GetID()) end
 ContainerFrameItemButton_OnClick=function(button) C_Container.PickupContainerItem(button:GetParent():GetID(),button:GetID()) end
-source:GetHighlightTexture():Show(); source.highlightLocked=true
+source:GetHighlightTexture():Show(); source.highlightLocked=true; source.hover:Show()
 local sourceHides=source.hideCount or 0
 source.scripts.OnDragStart(source)
-assert(not source:GetHighlightTexture():IsShown() and not source.highlightLocked,'Drag start must clear the source highlight without hiding the button')
+assert(not source:GetHighlightTexture():IsShown() and not source.hover:IsShown() and not source.highlightLocked,'Drag start must clear the source highlight without hiding the button')
 eventFrame.scripts.OnEvent(eventFrame,'ITEM_LOCK_CHANGED')
 drain()
 assert(source:IsShown() and (source.hideCount or 0)==sourceHides,'Inventory refresh must not hide the active drag source')
+assert(source:GetNormalTexture().alpha==0 and source:GetPushedTexture().alpha==0 and source:GetHighlightTexture().alpha==0,'Native decorations must remain invisible after drag refresh')
+assert(not source.hover:IsShown(),'Custom hover must not remain on the old slot')
 target.scripts.OnReceiveDrag(target)
 assert(not cursor and not inventory[0][3] and inventory[0][2].itemID==1,'Drag/drop must move the selected item')
 Bags:RefreshWindow()

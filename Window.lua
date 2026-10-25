@@ -64,6 +64,19 @@ function Bags:ClearItemHover(button)
     button:UnlockHighlight()
     local highlight=button:GetHighlightTexture()
     if highlight then highlight:Hide() end
+    if button.hover then button.hover:Hide() end
+end
+function Bags:ResetItemDecorations(button)
+    -- The template's engine-managed normal/pressed/hover textures can become
+    -- visible again after dragging. Keep them transparent, using our own
+    -- rounded border and explicitly managed hover instead.
+    for _,getter in ipairs({"GetNormalTexture","GetPushedTexture","GetHighlightTexture"}) do
+        local texture=button[getter] and button[getter](button)
+        if texture then texture:SetAlpha(0) end
+    end
+    for _,key in ipairs({"IconBorder","IconOverlay","BattlepayItemTexture","NewItemTexture","flash","ExtendedSlot","ExtendedOverlay","ExtendedOverlay2","BagStaticTop","BagStaticBottom"}) do
+        if button[key] then button[key]:Hide() end
+    end
 end
 function Bags:CreateItemButton(parent,bag,slot)
     -- The standard template supplies stack splitting, drag and item behavior.
@@ -85,8 +98,7 @@ function Bags:CreateItemButton(parent,bag,slot)
     b:HookScript("OnDragStop",function(button) self:ClearItemHover(button) end)
     b.UpdateTooltip=function(button) self:Tooltip(button) end
     b:SetScript("OnEnter",function(button)
-        local highlight=button:GetHighlightTexture()
-        if highlight then highlight:Show() end
+        if not GetCursorInfo() then button.hover:Show() end
         self:Tooltip(button)
     end)
     b:SetScript("OnLeave",function(button)
@@ -100,6 +112,10 @@ function Bags:CreateItemButton(parent,bag,slot)
     -- Blizzard's native rounded icon outline follows the item button shape.
     b.edge=b:CreateTexture(nil,"OVERLAY",nil,4); b.edge:SetAllPoints()
     b.edge:SetTexture("Interface\\Common\\WhiteIconFrame")
+    b.hover=b:CreateTexture(nil,"OVERLAY",nil,5); b.hover:SetAllPoints()
+    b.hover:SetTexture("Interface\\Common\\WhiteIconFrame")
+    b.hover:SetVertexColor(1,1,1,0.3); b.hover:Hide()
+    self:ResetItemDecorations(b)
     local icon=b.icon or _G[b:GetName().."IconTexture"]
     if icon then
         icon:ClearAllPoints(); icon:SetPoint("TOPLEFT",1,-1); icon:SetPoint("BOTTOMRIGHT",-1,1)
@@ -283,7 +299,8 @@ function Bags:RefreshWindow()
         -- source button here cancels the drag gesture before the mouse release.
         if not b:IsShown() then b:Show() end
         b.hasItem=s.info~=nil; b.readable=s.info and s.info.isReadable
-        if not s.info or not MouseIsOver(b) then self:ClearItemHover(b) end
+        self:ResetItemDecorations(b)
+        if not MouseIsOver(b) or GetCursorInfo() then self:ClearItemHover(b) end
         SetItemButtonTexture(b,s.info and s.info.iconFileID or "Interface\\Buttons\\WHITE8X8")
         local icon=b.icon or _G[b:GetName().."IconTexture"]
         if icon then
