@@ -18,22 +18,34 @@ function Bags:Matches(item, query)
     end
     return (item.search or ""):find(query,1,true)~=nil
 end
--- A deterministic ordering within one bag family; the physical slot order stays
--- unchanged until a deliberate sort. Full links distinguish random suffixes.
+-- Display ordering never changes the slot records or their bag/slot identities.
+-- Full links distinguish random suffixes; coordinates break ties consistently.
 function Bags:Before(a,b)
     if not a.info then return false end
     if not b.info then return true end
     if a.class~=b.class then return a.class<b.class end
     if a.subclass~=b.subclass then return a.subclass<b.subclass end
     if a.name~=b.name then return a.name<b.name end
-    if a.info.hyperlink~=b.info.hyperlink then return a.info.hyperlink<b.info.hyperlink end
+    local al,bl=a.info.hyperlink or tostring(a.info.itemID),b.info.hyperlink or tostring(b.info.itemID)
+    if al~=bl then return al<bl end
     return false
+end
+function Bags:DisplayOrder(slots)
+    local display={}
+    for i,slot in ipairs(slots) do display[i]=slot end
+    table.sort(display,function(a,b)
+        if self:Before(a,b) then return true end
+        if self:Before(b,a) then return false end
+        if a.bag~=b.bag then return a.bag<b.bag end
+        return a.slot<b.slot
+    end)
+    return display
 end
 function Bags:Signature(info)
     return info and ((info.hyperlink or tostring(info.itemID)).."#"..info.stackCount) or "empty"
 end
--- Return one safe movement, then revalidate against the live inventory. Never
--- swap two stacks of the same item: the client would merge instead of swapping.
+-- Only identical partial stacks may move. Display sorting must never create
+-- physical swaps; different bag families remain separate for consolidation.
 function Bags:NextMove(slots)
     local groups={}
     for _,s in ipairs(slots) do
@@ -49,24 +61,6 @@ function Bags:NextMove(slots)
                 local link=s.info.hyperlink
                 if partial[link] then return {kind="merge",from=s,to=partial[link]} end
                 partial[link]=s
-            end
-        end
-    end
-    for _,group in pairs(groups) do
-        local desired={}
-        for i,s in ipairs(group) do desired[i]=s end
-        table.sort(desired,function(a,b) return self:Before(a,b) end)
-        for i,s in ipairs(group) do
-            local target=desired[i]
-            local currentLink=s.info and s.info.hyperlink
-            local targetLink=target.info and target.info.hyperlink
-            if currentLink~=targetLink then
-                -- All earlier positions already match; find the target later.
-                for j=i+1,#group do
-                    if group[j].info and group[j].info.hyperlink==targetLink then
-                        return {kind="swap",from=group[j],to=s}
-                    end
-                end
             end
         end
     end

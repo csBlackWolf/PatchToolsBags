@@ -166,7 +166,7 @@ function Bags:CreateWindow()
     self:PlaceWindow()
 end
 function Bags:RefreshWindow()
-    local slots=self:Scan(); local f=self.window
+    local slots=self:DisplayOrder(self:Scan()); local f=self.window
     local available=UIParent:GetHeight()/self.db.scale-160
     local columns=math.max(self.db.columns,math.ceil(#slots/math.max(1,math.floor(available/40))))
     columns=math.min(20,columns)

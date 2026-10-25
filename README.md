@@ -1,6 +1,6 @@
 # PatchToolsBags
 
-An independent optional bag module for PatchTools. **0.1.0-alpha.1 is a local
+An independent optional bag module for PatchTools. **0.1.0-alpha.2 is a local
 prototype for Classic Era; bugs and unfinished behavior are expected.** Forever
 uses the additional profession bag when available, but needs its own in-game test.
 
@@ -23,13 +23,15 @@ or saved inventory data is automatically disabled or removed.
 ## Included
 
 - One movable window, dark background and thin bronze border. Drag its lower right corner to scale it (65–130%).
-- Carried bags in stable slot order; adjustable scale and columns.
+- Carried bags sorted visually by class, subclass and name; adjustable scale and columns.
 - Search by name, ID and item type. Search dims nonmatches without moving items.
 - Search shortcuts: `quest`, `junk` / `schrott`, `sell` / `verkauf`,
   `protected` / `geschützt`.
-- Explicit sort button: consolidate identical stacks, then sort by item class,
-  subclass, name and full item link within each bag family. Specialty bags stay
-  separate from general bags. No bank or equipped items are touched.
+- Automatic visual ordering by item class, subclass, name and full item link.
+  Display slots retain their real bag/slot coordinates for clicks and dragging.
+- The sort button only consolidates identical partial stacks. Other items never
+  move physically. Specialty bag families stay separate during consolidation.
+  No bank or equipped items are touched.
 - Q = quest item; P = protected by PatchTools; V = currently eligible for sale
   under PatchTools settings; J = junk without an active/known sale eligibility.
   Positive vendor price is required for V. Quest/protection take precedence.
@@ -40,7 +42,8 @@ or saved inventory data is automatically disabled or removed.
 
 ## Limits and safety
 
-Sorting is explicit, outside combat, with an empty cursor. It stops for locked
+Visual sorting does not move inventory items or wait for the server. Physical
+stack consolidation is explicit, outside combat, with an empty cursor. It stops for locked
 or uncached items, unexpected inventory changes or unconfirmed movements. Close
 the window to stop further movements; an already completed movement is retained.
 It never clears the cursor, deletes, equips, uses or sells items automatically.
@@ -56,6 +59,6 @@ it does not embed another bag addon's implementation. No Syndicator dependency.
 ## Development
 
 `python tests/run.py` requires Python and `lupa` (Lua 5.4). Tests cover randomized
-sort convergence and conservation across item variants/families, protection rules,
+visual ordering and slot identity, merge-only conservation across item variants/families, protection rules,
 module registration, UI creation, bag access and inventory movement execution.
 They do not replace an in-game test of protected actions and tooltip integrations.

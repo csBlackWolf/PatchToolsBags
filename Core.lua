@@ -52,6 +52,7 @@ function Bags:StopSort(message)
     self:QueueRefresh()
 end
 function Bags:Sort()
+    self:RefreshWindow()
     if self.sorting then return end
     if InCombatLockdown() or GetCursorInfo() then
         self:Print("Sort outside combat with an empty cursor.","Bitte außerhalb des Kampfes mit leerem Mauszeiger sortieren."); return
@@ -68,12 +69,9 @@ function Bags:Sort()
         if steps>1000 then self:StopSort({"Sorting stopped; please try again.","Sortierung angehalten; bitte erneut versuchen."}); return end
         local a,b=move.from,move.to
         local ai,bi=a.info,b.info
-        local expectedA,expectedB
-        if move.kind=="merge" then
-            local amount=math.min(ai.stackCount,b.maxStack-bi.stackCount)
-            expectedA=ai.stackCount-amount>0 and {hyperlink=ai.hyperlink,stackCount=ai.stackCount-amount} or nil
-            expectedB={hyperlink=bi.hyperlink,stackCount=bi.stackCount+amount}
-        else expectedA=bi; expectedB=ai end
+        local amount=math.min(ai.stackCount,b.maxStack-bi.stackCount)
+        local expectedA=ai.stackCount-amount>0 and {hyperlink=ai.hyperlink,stackCount=ai.stackCount-amount} or nil
+        local expectedB={hyperlink=bi.hyperlink,stackCount=bi.stackCount+amount}
         -- Only these carried slots are touched; never clear or delete a cursor.
         C_Container.PickupContainerItem(a.bag,a.slot)
         local cursor,id=GetCursorInfo()

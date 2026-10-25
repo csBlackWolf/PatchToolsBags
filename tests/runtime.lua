@@ -7,6 +7,7 @@ function methods:SetNormalTexture(asset)
 end
 function methods:GetNormalTexture() return nil end
 for name in ('SetHighlightTexture SetPushedTexture SetJustifyH SetBackdrop SetBackdropColor SetBackdropBorderColor SetSize SetHeight SetWidth SetPoint ClearAllPoints SetFrameStrata SetMovable SetClampedToScreen EnableMouse RegisterForClicks RegisterForDrag SetAutoFocus SetMaxLetters ClearFocus SetTextColor SetAlpha SetAllPoints SetFont SetValueStep SetObeyStepOnDrag StartMoving StopMovingOrSizing SetOwner SetBagItem SetMinMaxValues'):gmatch('%S+') do methods[name]=noop end
+function methods:SetPoint(...) self.point={...} end
 function methods:SetScript(key,fn) self.scripts[key]=fn end
 function methods:RegisterEvent(event) self.events[event]=true end
 function methods:CreateFontString() return CreateFrame('FontString') end
@@ -97,6 +98,13 @@ PatchTools.builder(CreateFrame('Frame'))
 ToggleBackpack(); assert(originalToggles==1,'Other bag addon must retain access')
 SlashCmdList.PATCHTOOLSBAGS(''); assert(Bags.window:IsShown())
 drain()
+assert(mutations==0,'Opening the sorted display must not move any items')
+local first=Bags.buttons['0:3']
+assert(first.point[4]==10 and first.point[5]==-78,'First visual slot should reference real bag 0 slot 3')
+local clicked
+ContainerFrameItemButton_OnClick=function(button,key) clicked={button:GetParent():GetID(),button:GetID(),key} end
+first.scripts.OnClick(first,'RightButton')
+assert(clicked[1]==0 and clicked[2]==3 and clicked[3]=='RightButton','Visual buttons must act on real slot')
 loaded.Baganator=false
 ToggleBackpack(); assert(not Bags.window:IsShown())
 ToggleBackpack(); assert(Bags.window:IsShown())
@@ -105,7 +113,9 @@ combat=true; Bags:Sort(); assert(mutations==0)
 combat=false; cursor={itemID=99}; Bags:Sort(); assert(mutations==0); cursor=nil
 Bags:Sort(); drain()
 assert(not Bags.sorting and not cursor)
-assert(inventory[0][1].itemID==1 and inventory[0][1].stackCount==20)
+assert(inventory[0][1].itemID==3 and inventory[0][1].stackCount==3,'Non-stack items must retain real coordinates')
+assert(inventory[0][3].itemID==1 and inventory[0][3].stackCount==20)
+assert(inventory[1][1].itemID==1 and inventory[1][1].stackCount==5)
 assert(inventory[2][1].itemID==9,'Specialty bag must retain its family')
 local previous=mutations; Bags:Sort(); drain(); assert(mutations==previous,'Already sorted inventory should do no work')
 SlashCmdList.PATCHTOOLSBAGS('reset'); drain()

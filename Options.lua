@@ -1,6 +1,6 @@
 local _,Bags=...
 function Bags:BuildOptions(parent)
-    local title=self:Text(parent,"PatchToolsBags · 0.1.0-alpha.1",16); title:SetPoint("TOPLEFT",0,-5)
+    local title=self:Text(parent,"PatchToolsBags · 0.1.0-alpha.2",16); title:SetPoint("TOPLEFT",0,-5)
     local intro=self:Text(parent,self:T("Shared carried bags. Alpha prototype — please report unexpected behavior.","Gemeinsame mitgeführte Taschen. Alpha-Prototyp – unerwartetes Verhalten bitte melden."),12)
     intro:SetPoint("TOPLEFT",0,-43); intro:SetWidth(560); intro:SetJustifyH("LEFT")
     local function Check(y,en,de,key)
@@ -31,6 +31,6 @@ function Bags:BuildOptions(parent)
     Slider(-345,"Columns","Spalten","columns",6,16,1)
     local open=self:Button(parent,self:T("Open bags","Taschen öffnen"),180,function() self:CreateWindow(); self.window:Show() end)
     open:SetPoint("TOPLEFT",0,-435)
-    local note=self:Text(parent,self:T("Drag the title to move; drag the lower right corner to scale. Reset: /ptbags reset\nSorting only moves carried items. Quest and protected items are never marked for sale.","Titelleiste ziehen: verschieben. Ecke unten rechts ziehen: skalieren. Reset: /ptbags reset\nSortieren verschiebt nur mitgeführte Gegenstände. Questitems und geschützte Items erhalten keine Verkaufsmarkierung."),12)
+    local note=self:Text(parent,self:T("Drag the title to move; drag the lower right corner to scale. Reset: /ptbags reset\nDisplay sorting is automatic. Sort only merges partial stacks. Quest and protected items are never marked for sale.","Titelleiste ziehen: verschieben. Ecke unten rechts ziehen: skalieren. Reset: /ptbags reset\nAnzeige automatisch sortiert. Sortieren führt nur Teilstapel zusammen. Questitems und geschützte Items erhalten keine Verkaufsmarkierung."),12)
     note:SetPoint("TOPLEFT",0,-490); note:SetWidth(560); note:SetJustifyH("LEFT")
 end
