@@ -16,6 +16,15 @@ function methods:SetScript(key,fn)
  end
  self.scripts[key]=fn
 end
+function methods:HookScript(key,callback)
+ local original=self.scripts[key]
+ self.scripts[key]=function(...) if original then original(...) end; callback(...) end
+end
+function methods:GetHighlightTexture()
+ if not self.highlight then self.highlight=CreateFrame('Texture') end
+ return self.highlight
+end
+function methods:UnlockHighlight() self.highlightLocked=false end
 function methods:RegisterEvent(event) self.events[event]=true end
 function methods:CreateFontString() return CreateFrame('FontString') end
 function methods:CreateTexture() return CreateFrame('Texture') end
@@ -76,6 +85,7 @@ IsModifiedClick=function() return false end
 GetMoney=function() return 100 end
 GetCoinTextureString=tostring
 ResetCursor=noop
+MouseIsOver=function() return false end
 SetItemButtonTexture=noop; SetItemButtonCount=noop; SetItemButtonDesaturated=noop; CooldownFrame_Set=noop
 hooksecurefunc=noop
 local loaded={Baganator=true}
@@ -173,8 +183,10 @@ local sourceX,sourceY=source.point[4],source.point[5]
 local targetX,targetY=target.point[4],target.point[5]
 ContainerFrameItemButton_OnDrag=function(button) C_Container.PickupContainerItem(button:GetParent():GetID(),button:GetID()) end
 ContainerFrameItemButton_OnClick=function(button) C_Container.PickupContainerItem(button:GetParent():GetID(),button:GetID()) end
+source:GetHighlightTexture():Show(); source.highlightLocked=true
 local sourceHides=source.hideCount or 0
 source.scripts.OnDragStart(source)
+assert(not source:GetHighlightTexture():IsShown() and not source.highlightLocked,'Drag start must clear the source highlight without hiding the button')
 eventFrame.scripts.OnEvent(eventFrame,'ITEM_LOCK_CHANGED')
 drain()
 assert(source:IsShown() and (source.hideCount or 0)==sourceHides,'Inventory refresh must not hide the active drag source')

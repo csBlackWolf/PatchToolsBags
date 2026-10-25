@@ -60,6 +60,11 @@ function Bags:Tooltip(button)
         left=left+widths[i]+4
     end
 end
+function Bags:ClearItemHover(button)
+    button:UnlockHighlight()
+    local highlight=button:GetHighlightTexture()
+    if highlight then highlight:Hide() end
+end
 function Bags:CreateItemButton(parent,bag,slot)
     -- The standard template supplies stack splitting, drag and item behavior.
     local b=CreateFrame("Button", "PatchToolsBagsItem"..bag.."_"..slot,parent,"ContainerFrameItemButtonTemplate")
@@ -76,9 +81,16 @@ function Bags:CreateItemButton(parent,bag,slot)
     -- Keep the secure XML click/drag scripts inherited from Blizzard intact.
     -- Replacing them with addon closures taints spell-targeted item use (pet
     -- feeding, enchanting, etc.). Sorting disables the buttons instead.
+    b:HookScript("OnDragStart",function(button) self:ClearItemHover(button) end)
+    b:HookScript("OnDragStop",function(button) self:ClearItemHover(button) end)
     b.UpdateTooltip=function(button) self:Tooltip(button) end
-    b:SetScript("OnEnter",b.UpdateTooltip)
+    b:SetScript("OnEnter",function(button)
+        local highlight=button:GetHighlightTexture()
+        if highlight then highlight:Show() end
+        self:Tooltip(button)
+    end)
     b:SetScript("OnLeave",function(button)
+        self:ClearItemHover(button)
         if GameTooltip:GetOwner()==button then
             GameTooltip:Hide(); ShoppingTooltip1:Hide(); ShoppingTooltip2:Hide()
         end
@@ -271,6 +283,7 @@ function Bags:RefreshWindow()
         -- source button here cancels the drag gesture before the mouse release.
         if not b:IsShown() then b:Show() end
         b.hasItem=s.info~=nil; b.readable=s.info and s.info.isReadable
+        if not s.info or not MouseIsOver(b) then self:ClearItemHover(b) end
         SetItemButtonTexture(b,s.info and s.info.iconFileID or "Interface\\Buttons\\WHITE8X8")
         local icon=b.icon or _G[b:GetName().."IconTexture"]
         if icon then
