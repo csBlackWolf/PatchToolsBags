@@ -3,6 +3,8 @@ enable-nolib-creation: no
 required-dependencies:
   - patchtools
 ignore:
+  - DEVELOPMENT.md
+  - GUIDE.md
   - .gitignore
   - .pkgmeta
   - README.md
