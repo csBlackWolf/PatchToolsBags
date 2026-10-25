@@ -1,11 +1,11 @@
 # PatchToolsBags
 
 An independent optional bag module for [PatchTools](https://github.com/csBlackWolf/PatchTools).
-**0.1.0-alpha.3 is an early alpha prototype for Classic Era; bugs and unfinished behavior are expected.** Forever
+**0.1.0 is the first public release for Classic Era; bugs and unfinished behavior are possible.** Forever
 uses the additional profession bag when available, but needs its own in-game test.
 
-Development takes place on `alpha/prototype`. This repository does not yet
-provide a stable release.
+Public releases are built from `main`. The initial prototype history is preserved
+on `alpha/prototype`. [Download on CurseForge](https://www.curseforge.com/wow/addons/patchtoolsbags).
 
 ## First test / Erster Test
 

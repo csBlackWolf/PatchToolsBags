@@ -1,0 +1,11 @@
+package-as: PatchToolsBags
+enable-nolib-creation: no
+required-dependencies:
+  - patchtools
+ignore:
+  - .gitignore
+  - .pkgmeta
+  - README.md
+  - tests
+  - RELEASING.md
+manual-changelog: CHANGELOG.md

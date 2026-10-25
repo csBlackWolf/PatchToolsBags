@@ -1,8 +1,10 @@
 ## Interface: 11509, 16001
 ## Title: PatchToolsBags
 ## Notes: A compact shared bag with search, sorting and PatchTools item rules.
-## Author: Zen
-## Version: 0.1.0-alpha.3
+## Author: Patch & Zen
+## X-License: MIT
+## X-Curse-Project-ID: 1766097
+## Version: 0.1.0
 ## Dependencies: PatchTools
 ## IconTexture: Interface\AddOns\PatchTools\Media\Icon
 ## SavedVariables: PatchToolsBagsDB
