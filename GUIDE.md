@@ -34,4 +34,4 @@ Bank, Schlüsselbund und Inventare ausgeloggter Charaktere sind nicht enthalten.
 
 ## Further reading / Weitere Informationen
 
-[Developer guide](DEVELOPMENT.md) · [Changelog](CHANGELOG.md) · [Report a bug](https://github.com/csBlackWolf/PatchToolsBags/issues/new/choose) · [Back to overview](README.md)
+[Developer guide](DEVELOPMENT.md) · [Changelog](CHANGELOG.md) · [Report a bug](https://github.com/csBlackWolf/PatchTools/issues/new/choose) · [Back to overview](README.md)

@@ -23,7 +23,7 @@ _A compact bag addon for PatchTools with fast item sorting for Classic Era and F
 
 You can also use `/patchtoolsbags` instead of `/ptbags`.
 
-[Download on CurseForge](https://www.curseforge.com/wow/addons/patchtoolsbags) · [Source code and bug reports](https://github.com/csBlackWolf/PatchToolsBags)
+[Download on CurseForge](https://www.curseforge.com/wow/addons/patchtoolsbags) · [Source code](https://github.com/csBlackWolf/PatchToolsBags) · [Bug reports and ideas](https://github.com/csBlackWolf/PatchTools/issues/new/choose)
 
 [Detailed user guide](GUIDE.md) · [Developer guide](DEVELOPMENT.md)
 
@@ -54,6 +54,6 @@ _Ein kompaktes Taschen-Addon für PatchTools mit schneller Item-Sortierung für 
 
 Statt `/ptbags` funktioniert auch `/patchtoolsbags`.
 
-[Download auf CurseForge](https://www.curseforge.com/wow/addons/patchtoolsbags) · [Quellcode und Fehlerberichte](https://github.com/csBlackWolf/PatchToolsBags)
+[Download auf CurseForge](https://www.curseforge.com/wow/addons/patchtoolsbags) · [Quellcode](https://github.com/csBlackWolf/PatchToolsBags) · [Fehler und Ideen melden](https://github.com/csBlackWolf/PatchTools/issues/new/choose)
 
 [Ausführliche Bedienungsanleitung](GUIDE.md) · [Entwicklerinfos](DEVELOPMENT.md)
