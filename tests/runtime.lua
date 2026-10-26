@@ -46,6 +46,14 @@ function methods:SetVertexColor(...) self.vertex={...} end
 function methods:SetTexture(value) self.texture=value end
 function methods:SetBackdropBorderColor(...) self.border={...} end
 function methods:GetOwner() return self.owner end
+function methods:GetAlpha() return self.alpha or 1 end
+function methods:IsMouseEnabled() return self.mouseEnabled~=false end
+function methods:EnableMouse(enabled) self.mouseEnabled=enabled end
+function methods:GetChildren()
+ local children={}
+ for _,frame in ipairs(frames) do if frame.parent==self then children[#children+1]=frame end end
+ return table.unpack(children)
+end
 function methods:SetID(id) self.id=id end
 function methods:GetID() return self.id end
 function methods:SetScale(scale) self.scale=scale end
@@ -69,10 +77,13 @@ function CreateFrame(kind,name,parent,template)
  frames[#frames+1]=f
  if name then _G[name]=f end
  if template=='OptionsSliderTemplate' then _G[name..'Low']=CreateFrame('FontString'); _G[name..'High']=CreateFrame('FontString') end
- if template=='ContainerFrameItemButtonTemplate' then
+ if template=='ContainerFrameItemButtonTemplate' or template=='BankItemButtonGenericTemplate' then
   _G[name..'Cooldown']=CreateFrame('Cooldown')
   f.nativeScripts=true
   f.scripts.OnClick=function(button,key)
+   if template=='BankItemButtonGenericTemplate' then
+    C_Container.PickupContainerItem(button:GetParent():GetID(),button:GetID()); return
+   end
    if IsModifiedClick() then ContainerFrameItemButton_OnModifiedClick(button,key)
    else ContainerFrameItemButton_OnClick(button,key) end
   end
@@ -129,6 +140,7 @@ C_Item={GetItemInfo=function(link) local id=tonumber(link:match('%d+')); return 
 assert(loadfile('Core.lua'))('PatchToolsBags',Bags)
 assert(loadfile('Pawn.lua'))('PatchToolsBags',Bags)
 assert(loadfile('Window.lua'))('PatchToolsBags',Bags)
+assert(loadfile('Bank.lua'))('PatchToolsBags',Bags)
 assert(loadfile('Options.lua'))('PatchToolsBags',Bags)
 local eventFrame=frames[#frames]
 -- Locate the event frame, since files loaded after it need not create frames.
@@ -326,3 +338,73 @@ SlashCmdList.PATCHTOOLSBAGS('reset'); eventFrame.scripts.OnEvent(eventFrame,'PLA
 assert(Bags.windowDB.scale==1 and Bags.windowDB.columns==10 and Bags.windowDB.x==nil)
 assert(Bags.db==account and account.scale==.85 and account.columns==12 and account.backgroundTransparency==.4)
 print('PASS: bag character migration, separate position/scale/columns, reset and global transparency.')
+
+-- Classic bank bags start at NUM_BAG_SLOTS + 1, even when the shared retail
+-- enums claim 6. Forever must use purchased bank tabs and keep reagent bag 5.
+local carriedIDs=Bags:BagIDs()
+Enum={BagIndex={ReagentBag=5,BankBag_1=6},BankType={Character=0}}
+NUM_BAG_SLOTS=4; NUM_BANKBAGSLOTS=6; BANK_CONTAINER=-1
+local ids=Bags:BankBagIDs()
+assert(#ids==7 and ids[1]==-1 and ids[2]==5 and ids[7]==10)
+inventory[-1]={{itemID=1,hyperlink='item:1',stackCount=12,quality=2}}
+inventory[5]={{itemID=1,hyperlink='item:1',stackCount=13,quality=2}}
+capacities[-1]=4; capacities[5]=2
+C_Container.GetContainerNumSlots=function(id) return capacities[id] or 0 end
+C_Container.GetContainerItemInfo=function(id,slot) return inventory[id] and inventory[id][slot] end
+BankFrame=CreateFrame('Frame'); BankFrame:SetAlpha(.7)
+local nativeChild=CreateFrame('Button',nil,BankFrame); nativeChild:EnableMouse(false)
+local nativeActive=CreateFrame('Button',nil,BankFrame); nativeActive:EnableMouse(true)
+local closedNative={}
+CloseBag=function(id) closedNative[#closedNative+1]=id end
+local closes=0
+CloseBankFrame=function() closes=closes+1; Bags:HandleBankEvent('BANKFRAME_CLOSED') end
+local originalBagWindow=Bags.window
+Bags:HandleBankEvent('BANKFRAME_OPENED'); drain()
+local bank=Bags.bankView
+assert(bank and bank~=Bags and bank.window~=originalBagWindow and bank.window:IsShown())
+assert(bank.buttons['-1:1'] and bank.buttons['5:1'] and not bank.buttons['0:1'])
+assert(bank.windowDB~=Bags.windowDB and bank.layout~=Bags.layout)
+assert(BankFrame:GetAlpha()==0 and not BankFrame:IsMouseEnabled() and not nativeActive:IsMouseEnabled())
+assert(#closedNative==6 and closedNative[1]==5,'native bank bags suppressed without closing carried bags')
+local carriedSignature=Bags:Signature(inventory[0][1])
+bank:Sort(); drain()
+assert(inventory[-1][1].stackCount==20 and inventory[5][1].stackCount==5)
+assert(Bags:Signature(inventory[0][1])==carriedSignature,'bank consolidation never touches carried items')
+bank.buttons['-1:1'].scripts.OnClick(bank.buttons['-1:1'],'LeftButton')
+assert(cursor and cursor.itemID==1,'bank main slot keeps native click handling')
+C_Container.PickupContainerItem(-1,1); assert(not cursor)
+Bags.windowDB.x=88; bank.windowDB.x=22; bank.windowDB.scale=.75
+Bags:HandleBankEvent('BANKFRAME_CLOSED'); drain()
+assert(not bank.window:IsShown() and BankFrame:GetAlpha()==.7)
+assert(BankFrame:IsMouseEnabled() and not nativeChild:IsMouseEnabled() and nativeActive:IsMouseEnabled())
+local beforeClosed=mutations; bank:Sort(); drain(); assert(mutations==beforeClosed)
+Bags:HandleBankEvent('BANKFRAME_OPENED'); drain()
+assert(bank.windowDB.x==22 and Bags.windowDB.x==88,'separate bank layout survives reopening')
+bank.window.bankSetup.scripts.OnClick()
+assert(Bags.bankManagement and not bank.window:IsShown() and BankFrame:GetAlpha()==.7)
+SlashCmdList.PATCHTOOLSBAGS('bank')
+assert(not Bags.bankManagement and bank.window:IsShown() and BankFrame:GetAlpha()==0,'return from native bank setup')
+inventory[-1][1].stackCount=11; inventory[5][1].stackCount=12
+bank:Sort(); local afterStart=mutations
+Bags:HandleBankEvent('BANKFRAME_CLOSED'); drain()
+assert(mutations==afterStart and not bank.sorting,'bank closure cancels delayed consolidation')
+
+Bags.owner.isForever=true; Bags.owner.hasProfessionBag=true
+local tabs={6,8,10}
+C_Bank={CanViewBank=function(kind) assert(kind==0); return true end,
+ FetchPurchasedBankTabIDs=function(kind) assert(kind==0); return tabs end}
+assert(Bags:BagIDs()[6]==5,'profession bag remains carried')
+ids=Bags:BankBagIDs(); assert(#ids==3 and ids[1]==6 and ids[2]==8 and ids[3]==10)
+tabs={5,6}; assert(Bags:BankBagIDs()==nil,'reject a bank response that aliases the carried profession bag')
+tabs={6,8,10}; inventory[6]={{itemID=9,hyperlink='item:9',stackCount=1,quality=2}}; capacities[6]=2
+Bags:HandleBankEvent('BANKFRAME_OPENED'); drain()
+assert(bank.buttons['6:1']:IsShown() and not bank.buttons['5:1']:IsShown() and not bank.buttons['-1:1']:IsShown())
+assert(#Bags:Scan()==10,'carried inventory scan includes the profession bag and excludes bank tabs')
+Bags.db.replaceBank=false; Bags:UpdateBankReplacement()
+assert(not bank.window:IsShown() and BankFrame:GetAlpha()==.7,'bank replacement can be disabled live')
+Bags.db.replaceBank=true; Bags:UpdateBankReplacement(); assert(bank.window:IsShown())
+Bags:HandleBankEvent('BANKFRAME_CLOSED'); drain()
+C_Bank=nil; Bags:HandleBankEvent('BANKFRAME_OPENED'); drain()
+assert(not bank.window:IsShown() and BankFrame:GetAlpha()==.7,'unavailable Forever API keeps the native bank')
+Bags:HandleBankEvent('BANKFRAME_CLOSED')
+print('PASS: Era bank index mismatch, native handlers, separate bank sorting/layout, lifecycle cancellation, restoration and Forever tab/profession isolation.')

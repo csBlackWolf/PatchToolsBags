@@ -14,7 +14,7 @@ You can sort the display in combat. Stack merging is skipped, with a chat notice
 
 Other active bag addons take priority over normal bag hotkeys. With Baganator, Bagnon, AdiBags, ArkInventory or BetterBags loaded, `/ptbags` still opens this window separately. To use PatchToolsBags for normal bag keys, disable the competing bag addon and reload. PatchToolsBags does not disable other addons or remove their saved data.
 
-The current window covers carried bags, not banks, keyrings or offline characters. Classic Era has received in-game checks. Forever includes the extra profession bag where available, but still needs a separate in-game check. Very large tooltip groups may exceed the screen; include your tooltip addons and UI scale when reporting a problem.
+The local bank preview adds a separate compact window while visiting the banker, with search, Sort and specialty-bag sections. Position and scale are saved separately from your bags. Right-clicks and dragging use the normal bank actions. **Bank setup** opens Blizzard’s controls for buying slots and changing bank bags; `/ptbags bank` returns to the compact view during the same visit. The bank view can be disabled in settings. `/ptbags reset` resets both window sizes and positions, retaining item layouts. Keyrings, warbanks and offline characters are not included. Classic Era has received in-game checks. Forever includes the extra profession bag where available, but still needs a separate in-game check. Very large tooltip groups may exceed the screen; include your tooltip addons and UI scale when reporting a problem.
 
 ## Deutsch
 
@@ -30,7 +30,7 @@ Die Anzeige lässt sich auch im Kampf sortieren. Stapel werden dabei nicht zusam
 
 Andere aktive Taschen-Addons behalten die normalen Taschen-Tasten. Mit `/ptbags` kannst du dieses Fenster separat öffnen. Deaktiviere das andere Taschen-Addon und lade die Oberfläche neu, wenn PatchToolsBags die normalen Taschen-Tasten übernehmen soll. Bestehende Addons und deren gespeicherte Daten werden nicht entfernt.
 
-Bank, Schlüsselbund und Inventare ausgeloggter Charaktere sind nicht enthalten. Classic Era wurde im Spiel getestet. Die zusätzliche Berufstasche auf Forever wird berücksichtigt, benötigt aber noch einen eigenen Spieltest. Bei Problemen mit großen Vergleichstooltips helfen Angaben zu deinen Tooltip-Addons und deiner UI-Skalierung.
+Die lokale Bankvorschau ergänzt beim Bankier ein eigenes kompaktes Fenster mit Suche, Sortieren und Bereichen für Spezialtaschen. Position und Skalierung werden getrennt von deinen Taschen gespeichert. Rechtsklick und Ziehen verwenden die normalen Bankaktionen. **Bankverwaltung** öffnet Blizzards Bedienelemente zum Kaufen von Plätzen und Wechseln der Banktaschen. Mit `/ptbags bank` kehrst du während desselben Besuchs zur kompakten Ansicht zurück. Die Bankansicht lässt sich in den Einstellungen ausschalten. `/ptbags reset` setzt Größe und Position beider Fenster zurück; Item-Anordnungen bleiben erhalten. Schlüsselbund, accountweite Bank und Inventare ausgeloggter Charaktere sind nicht enthalten. Classic Era wurde im Spiel getestet. Die zusätzliche Berufstasche auf Forever wird berücksichtigt, benötigt aber noch einen eigenen Spieltest. Bei Problemen mit großen Vergleichstooltips helfen Angaben zu deinen Tooltip-Addons und deiner UI-Skalierung.
 
 ## Further reading / Weitere Informationen
 

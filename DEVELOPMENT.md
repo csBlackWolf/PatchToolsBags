@@ -40,3 +40,13 @@ Public releases use `main`; `alpha/prototype` preserves the initial prototype hi
 See [RELEASING.md](RELEASING.md) for packaging and publication, [CHANGELOG.md](CHANGELOG.md) for changes and the [PatchTools extension guide](https://github.com/csBlackWolf/PatchTools/blob/main/EXTENSIONS.md) for settings integration. Keep commit messages and documentation direct: describe the change and its purpose without conversational notes or assumptions about who is doing the work.
 
 Window position, scale and column count use `PatchToolsBagsCharacterDB` (`SavedVariablesPerCharacter`). Import the old account geometry once for each character; later changes and resets stay local to that character. Background transparency and the other bag preferences remain account-wide in `PatchToolsBagsDB`. Display-slot ordering keeps its existing character-specific storage.
+
+## Bank preview
+
+`Bank.lua` creates a second view that shares window/model methods but no widget state with the carried inventory. Its geometry and slot layout live under the character-specific `bank` table; transparency and marker preferences are shared. Keep scans and stack-merging plans separate for each view. Stop pending merges on BANKFRAME_CLOSED, and leave the bank unavailable away from the banker.
+
+Era uses BANK_CONTAINER plus NUM_BAG_SLOTS + 1 through NUM_BAG_SLOTS + NUM_BANKBAGSLOTS; do not use the shared retail BankBag enum values. Forever uses C_Bank.FetchPurchasedBankTabIDs(Enum.BankType.Character), checking bank access and rejecting any ID also present in the carried inventory. The profession bag remains carried. An unavailable tab API leaves the native bank in place.
+
+Retain the native bank as logically shown for standard right-click deposit/withdraw handlers. Suppress its presentation and mouse targets while our view is active; restore their previous states on close, disable or Bank setup. Native bank bag frames are closed only for Era bank IDs. Keep native XML click/drag scripts, including BankItemButtonGenericTemplate for Era's main bank slots. Bank setup hands control back to Blizzard for slot purchases and bag replacement; no custom purchase action is performed.
+
+Reference: Blizzard UI sources for [Era bank handling](https://github.com/Gethe/wow-ui-source/blob/classic_era/Interface/AddOns/Blizzard_UIPanels_Game/Vanilla/BankFrame.lua) and [Forever bank tabs](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_UIPanels_Game/Camelot/BankFrame.lua). Automated fixtures cover the incorrect Era enum offset, Forever tab/profession isolation, native handlers, separate layouts, consolidation, closure cancellation and native fallback. Actual bank interactions and Forever gameplay still require in-game confirmation.

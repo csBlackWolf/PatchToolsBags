@@ -44,6 +44,9 @@ function Bags:QueueRefresh()
     C_Timer.After(0.04,function()
         self.refreshPending=nil
         if self.window and self.window:IsShown() then self:RefreshWindow() end
+        local bank=rawget(self,"bankView")
+        if bank and self.bankOpen and self.nativeBankAppearance then self:SetNativeBankVisible(false) end
+        if bank and bank.window and bank.window:IsShown() then bank:RefreshWindow() end
     end)
 end
 function Bags:StopSort(message)
@@ -53,6 +56,7 @@ function Bags:StopSort(message)
     self:QueueRefresh()
 end
 function Bags:Sort()
+    if self.IsAvailable and not self:IsAvailable() then return end
     if self.sorting then return end
     if GetCursorInfo() then
         self:Print("Sort with an empty cursor.","Bitte mit leerem Mauszeiger sortieren."); return
@@ -67,6 +71,7 @@ function Bags:Sort()
     local steps=0
     local function Step()
         if not self.sorting then return end
+        if self.IsAvailable and not self:IsAvailable() then self:StopSort(); return end
         if InCombatLockdown() then
             self:StopSort({"Stack merging stopped because combat started.","Stapelzusammenführung wegen Kampfbeginn angehalten."}); return
         end
@@ -81,7 +86,7 @@ function Bags:Sort()
         local amount=math.min(ai.stackCount,b.maxStack-bi.stackCount)
         local expectedA=ai.stackCount-amount>0 and {hyperlink=ai.hyperlink,stackCount=ai.stackCount-amount} or nil
         local expectedB={hyperlink=bi.hyperlink,stackCount=bi.stackCount+amount}
-        -- Only these carried slots are touched; never clear or delete a cursor.
+        -- Only slots in this view are touched; never clear or delete a cursor.
         C_Container.PickupContainerItem(a.bag,a.slot)
         local cursor,id=GetCursorInfo()
         if cursor~="item" or id~=ai.itemID then self:StopSort(); return end
@@ -91,6 +96,7 @@ function Bags:Sort()
         local attempts=0
         local function Confirm()
             if not self.sorting then return end
+            if self.IsAvailable and not self:IsAvailable() then self:StopSort(); return end
             attempts=attempts+1
             local x=C_Container.GetContainerItemInfo(a.bag,a.slot)
             local y=C_Container.GetContainerItemInfo(b.bag,b.slot)
@@ -120,7 +126,13 @@ function Bags:InstallBagAccess()
         if type(original)=="function" then
             _G[name]=function(...)
                 local id=...
-                local carried=type(id)=="number" and id>=0 and id<=4
+                local carried=false
+                for _,bag in ipairs(Bags:BagIDs()) do if bag==id then carried=true; break end end
+                if op=="bag" and Bags.bankOpen and not Bags.bankManagement and Bags:CanReplaceBank() then
+                    for _,bag in ipairs(Bags:BankBagIDs() or {}) do
+                        if bag==id then Bags:ShowBank(); return end
+                    end
+                end
                 if not Bags:CanReplace() or (op=="bag" and not carried) then return original(...) end
                 Bags:CreateWindow()
                 if op=="close" then Bags.window:Hide()
@@ -145,16 +157,20 @@ events:SetScript("OnEvent",function(_,event)
             PatchToolsBagsCharacterDB={scale=Bags.db.scale,columns=Bags.db.columns,x=Bags.db.x,y=Bags.db.y}
         end
         Bags.windowDB=PatchToolsBagsCharacterDB
-        for k,v in pairs({replaceBags=true,markers=true,pawnUpgrades=true,backgroundTransparency=0}) do if Bags.db[k]==nil then Bags.db[k]=v end end
+        for k,v in pairs({replaceBags=true,replaceBank=true,markers=true,pawnUpgrades=true,backgroundTransparency=0}) do if Bags.db[k]==nil then Bags.db[k]=v end end
         Bags.windowDB.columns=math.max(6,math.min(16,tonumber(Bags.windowDB.columns) or 10))
         Bags.windowDB.scale=math.max(0.65,math.min(1.3,tonumber(Bags.windowDB.scale) or 1))
         Bags.db.backgroundTransparency=math.max(0,math.min(0.8,tonumber(Bags.db.backgroundTransparency) or 0))
         Bags.owner:RegisterOptionsPage("bags",Bags:T("Bags","Taschen"),function(parent) Bags:BuildOptions(parent) end)
         Bags:InstallBagAccess()
+        if Bags.InstallBankAccess then Bags:InstallBankAccess(events) end
         SLASH_PATCHTOOLSBAGS1="/ptbags"; SLASH_PATCHTOOLSBAGS2="/patchtoolsbags"
         SlashCmdList.PATCHTOOLSBAGS=function(msg)
-            if msg:lower():match("^%s*reset%s*$") then
+            if msg:lower():match("^%s*bank%s*$") then
+                Bags:ShowBank()
+            elseif msg:lower():match("^%s*reset%s*$") then
                 Bags.windowDB.x=nil; Bags.windowDB.y=nil; Bags.windowDB.scale=1; Bags.windowDB.columns=10
+                if Bags.ResetBankWindow then Bags:ResetBankWindow() end
                 Bags:CreateWindow(); Bags:PlaceWindow(); Bags.window:Show(); Bags:QueueRefresh()
             else Bags:Toggle() end
         end
@@ -163,6 +179,7 @@ events:SetScript("OnEvent",function(_,event)
             if type(Bags.owner[method])=="function" then hooksecurefunc(Bags.owner,method,function() Bags:QueueRefresh() end) end
         end
     elseif Bags.db then
+        if Bags.HandleBankEvent and Bags:HandleBankEvent(event) then return end
         if event=="PLAYER_EQUIPMENT_CHANGED" or event=="PLAYER_LEVEL_UP" or event=="GET_ITEM_INFO_RECEIVED" or event=="ADDON_LOADED" then
             Bags:InvalidatePawnUpgrades()
         else Bags:QueueRefresh() end

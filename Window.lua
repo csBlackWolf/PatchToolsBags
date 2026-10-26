@@ -23,6 +23,7 @@ function Bags:PlaceWindow()
     local f=self.window
     f:SetScale(self.windowDB.scale); f:ClearAllPoints()
     if self.windowDB.x and self.windowDB.y then f:SetPoint("TOPLEFT",UIParent,"BOTTOMLEFT",self.windowDB.x,self.windowDB.y)
+    elseif self.isBank then f:SetPoint("TOPLEFT",UIParent,"TOPLEFT",24,-110)
     else f:SetPoint("CENTER",UIParent,"CENTER",130,0) end
 end
 function Bags:ApplyBackgroundTransparency()
@@ -105,7 +106,9 @@ function Bags:ResetItemDecorations(button)
 end
 function Bags:CreateItemButton(parent,bag,slot)
     -- The standard template supplies stack splitting, drag and item behavior.
-    local b=CreateFrame("Button", "PatchToolsBagsItem"..bag.."_"..slot,parent,"ContainerFrameItemButtonTemplate")
+    local template=self.isBank and bag==(BANK_CONTAINER or -1) and not self.owner.isForever
+        and "BankItemButtonGenericTemplate" or "ContainerFrameItemButtonTemplate"
+    local b=CreateFrame("Button", (self.isBank and "PatchToolsBankItem" or "PatchToolsBagsItem")..bag.."_"..slot,parent,template)
     b.Cooldown=_G[b:GetName().."Cooldown"]
     local normal=b:GetNormalTexture()
     if normal then normal:Hide() end
@@ -160,7 +163,8 @@ function Bags:CreateItemButton(parent,bag,slot)
 end
 function Bags:CreateWindow()
     if self.window then return end
-    local f=CreateFrame("Frame","PatchToolsBagsWindow",UIParent,"BackdropTemplate")
+    local windowName=self.isBank and "PatchToolsBankWindow" or "PatchToolsBagsWindow"
+    local f=CreateFrame("Frame",windowName,UIParent,"BackdropTemplate")
     self.window=f; f:Hide(); self:Backdrop(f)
     f:SetFrameStrata("HIGH"); f:SetMovable(true); f:SetClampedToScreen(true); f:EnableMouse(true)
     f:SetSize(424,400)
@@ -170,8 +174,10 @@ function Bags:CreateWindow()
     header:SetScript("OnDragStop",function()
         f:StopMovingOrSizing(); self.windowDB.x=f:GetLeft(); self.windowDB.y=f:GetTop()
     end)
-    local title=self:Text(header,"PatchToolsBags",14); title:SetPoint("LEFT",6,0)
-    local close=self:Button(header,"×",20,function() f:Hide() end); close:SetHeight(20); close:SetPoint("RIGHT",-5,0)
+    local title=self:Text(header,self.isBank and "PatchToolsBags · Bank" or "PatchToolsBags",14); title:SetPoint("LEFT",6,0)
+    local close=self:Button(header,"×",20,function()
+        if self.isBank and CloseBankFrame then CloseBankFrame() else f:Hide() end
+    end); close:SetHeight(20); close:SetPoint("RIGHT",-5,0)
     f.sort=self:Button(f,self:T("Sort","Sortieren"),86,function() self:Sort(); self:QueueRefresh() end)
     f.sort:SetHeight(20); f.sort:SetPoint("TOPRIGHT",-6,-32)
     local search=CreateFrame("EditBox",nil,f,"InputBoxTemplate")
@@ -247,12 +253,14 @@ function Bags:CreateWindow()
         local owner=GameTooltip:GetOwner()
         if owner and owner.ptBags then GameTooltip:Hide(); ShoppingTooltip1:Hide(); ShoppingTooltip2:Hide() end
     end)
-    UISpecialFrames[#UISpecialFrames+1]="PatchToolsBagsWindow"
+    UISpecialFrames[#UISpecialFrames+1]=windowName
     self:PlaceWindow()
+    if self.isBank then self:CreateBankControls() end
 end
 function Bags:SectionIcon(section)
     local fallback="Interface\\Icons\\INV_Misc_Bag_08"
     local inventoryID=C_Container.ContainerIDToInventoryID or ContainerIDToInventoryID
+    if self.isBank and section.key=="general" then return "Interface\\Icons\\INV_Misc_Bag_10" end
     if section.key=="general" or not inventoryID then return fallback end
     local inventory=inventoryID(section.bag)
     local link=GetInventoryItemLink and GetInventoryItemLink("player",inventory)
@@ -278,7 +286,7 @@ function Bags:RefreshWindow()
         return height
     end
     while ContentHeight()>available and columns<20 do columns=columns+1 end
-    f:SetSize(math.max(300,columns*37+30),ContentHeight()+80)
+    f:SetSize(math.max(self.isBank and 460 or 300,columns*37+30),ContentHeight()+80)
     f:SetScale(self.windowDB.scale)
     self.sectionBadges=self.sectionBadges or {}
     for _,badge in ipairs(self.sectionBadges) do badge:Hide() end
@@ -300,7 +308,7 @@ function Bags:RefreshWindow()
             self.sectionBadges[index]=badge
         end
         local getName=C_Container.GetBagName or GetBagName
-        badge.title=section.key=="general" and self:T("Combined bags","Zusammengefasste Taschen")
+        badge.title=section.key=="general" and (self.isBank and self:T("Bank storage","Bankfach") or self:T("Combined bags","Zusammengefasste Taschen"))
             or (getName and getName(section.bag)) or self:T("Specialty bag","Spezialtasche")
         local free,bagOrder,counts=0,{},{}
         for _,slot in ipairs(section.slots) do
