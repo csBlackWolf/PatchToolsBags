@@ -1,21 +1,15 @@
-# PatchToolsBags 0.1.2-local.4 — local test — 2026-10-26
+# PatchToolsBags 0.1.2-alpha.1 — 2026-10-26
 
-- Enlarge the bottom-right upgrade arrow from 13 to 20 pixels. Pawn arrows remain enabled by default and can be switched off in the bag settings.
+Public alpha test: bugs are possible. Please report problems in the central PatchTools issue tracker. Stable 0.1.1 remains available.
 
-# PatchToolsBags 0.1.2-local.3 — local test — 2026-10-26
+- Add larger Pawn upgrade arrows at the bottom right of item icons. Enabled by default, with an option to switch them off. Pawn is optional.
+- Add adjustable background transparency, including empty slots, while keeping occupied item icons readable.
+- Add a borderless gear button that opens the bag settings directly.
+- Remember window position, scale and column count separately for each character. Transparency remains shared.
 
-- Give Pawn arrows an independent bag option, enabled by default. The native Pawn bag-arrow setting no longer suppresses PatchToolsBags arrows.
+PatchTools is required; the matching alpha is PatchTools 0.9.0-alpha.14.
 
-# PatchToolsBags 0.1.2-local.2 — local test — 2026-10-26
-
-- Apply background transparency to empty slot fills and borders; keep occupied icons and rarity borders opaque.
-
-# PatchToolsBags 0.1.2-local.1 — local test — 2026-10-26
-
-- Add a bottom-right Pawn upgrade arrow using Pawn's bag advisor and settings.
-- Keep stack counts clear of upgrade arrows and refresh after Pawn/equipment changes.
-- Add background transparency and a gear button that opens the bag settings directly.
-- Pawn remains optional. This build is for local testing, not a public release.
+Tested locally in Classic Era, with automated interaction, inventory and Pawn checks. Forever gameplay and character-switch layout persistence still need further in-game testing.
 
 # PatchToolsBags 0.1.1 — 2026-10-25
 

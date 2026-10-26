@@ -4,7 +4,7 @@
 ## Author: Patch & Zen
 ## X-License: MIT
 ## X-Curse-Project-ID: 1766097
-## Version: 0.1.2-local.5
+## Version: 0.1.2-alpha.1
 ## Dependencies: PatchTools
 ## OptionalDeps: Pawn
 ## IconTexture: Interface\AddOns\PatchTools\Media\Icon

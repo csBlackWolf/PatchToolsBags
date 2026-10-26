@@ -1,6 +1,6 @@
 local _,Bags=...
 function Bags:BuildOptions(parent)
-    local title=self:Text(parent,"PatchToolsBags · 0.1.2-local.5",16); title:SetPoint("TOPLEFT",0,-5)
+    local title=self:Text(parent,"PatchToolsBags · 0.1.2-alpha.1",16); title:SetPoint("TOPLEFT",0,-5)
     local intro=self:Text(parent,self:T("Shared carried bags. Alpha prototype — please report unexpected behavior.","Gemeinsame mitgeführte Taschen. Alpha-Prototyp – unerwartetes Verhalten bitte melden."),12)
     intro:SetPoint("TOPLEFT",0,-43); intro:SetWidth(560); intro:SetJustifyH("LEFT")
     local function Check(y,en,de,key)
