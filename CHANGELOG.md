@@ -1,3 +1,7 @@
+# PatchToolsBags 0.1.2-local.4 — local test — 2026-10-26
+
+- Enlarge the bottom-right upgrade arrow from 13 to 20 pixels. Pawn arrows remain enabled by default and can be switched off in the bag settings.
+
 # PatchToolsBags 0.1.2-local.3 — local test — 2026-10-26
 
 - Give Pawn arrows an independent bag option, enabled by default. The native Pawn bag-arrow setting no longer suppresses PatchToolsBags arrows.

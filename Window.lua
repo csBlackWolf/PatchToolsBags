@@ -148,7 +148,7 @@ function Bags:CreateItemButton(parent,bag,slot)
     b.mark=b:CreateTexture(nil,"OVERLAY",nil,7); b.mark:SetSize(13,13); b.mark:SetPoint("TOPLEFT",4,-6)
     b.pawnUpgrade=b:CreateTexture(nil,"OVERLAY",nil,7)
     b.pawnUpgrade:SetAtlas("bags-greenarrow")
-    b.pawnUpgrade:SetSize(13,13); b.pawnUpgrade:SetPoint("BOTTOMRIGHT",-3,3); b.pawnUpgrade:Hide()
+    b.pawnUpgrade:SetSize(20,20); b.pawnUpgrade:SetPoint("BOTTOMRIGHT",-2,2); b.pawnUpgrade:Hide()
     b.markShadows={}
     for _,offset in ipairs({{-1,0},{1,0},{0,-1},{0,1},{-1,-1},{1,-1},{-1,1},{1,1}}) do
         local shadow=b:CreateTexture(nil,"OVERLAY",nil,6)
