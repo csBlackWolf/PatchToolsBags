@@ -1,6 +1,6 @@
 local _,Bags=...
 function Bags:BuildOptions(parent)
-    local title=self:Text(parent,"PatchToolsBags · 0.1.1",16); title:SetPoint("TOPLEFT",0,-5)
+    local title=self:Text(parent,"PatchToolsBags · 0.1.2-local.1",16); title:SetPoint("TOPLEFT",0,-5)
     local intro=self:Text(parent,self:T("Shared carried bags. Alpha prototype — please report unexpected behavior.","Gemeinsame mitgeführte Taschen. Alpha-Prototyp – unerwartetes Verhalten bitte melden."),12)
     intro:SetPoint("TOPLEFT",0,-43); intro:SetWidth(560); intro:SetJustifyH("LEFT")
     local function Check(y,en,de,key)
@@ -22,20 +22,21 @@ function Bags:BuildOptions(parent)
         slider:SetScript("OnValueChanged",function(_,value)
             value=math.floor(value/step+0.5)*step
             Bags.db[key]=value
-            label:SetText(Bags:T(en,de)..": "..(key=="scale" and math.floor(value*100+0.5).."%" or tostring(value)))
+            label:SetText(Bags:T(en,de)..": "..((key=="scale" or key=="backgroundTransparency") and math.floor(value*100+0.5).."%" or tostring(value)))
             Bags:QueueRefresh()
         end)
         slider:SetValue(Bags.db[key])
     end
-    Slider(-255,"Window scale","Fensterskalierung","scale",0.65,1.3,0.05)
-    Slider(-345,"Columns","Spalten","columns",6,16,1)
+    Slider(-235,"Window scale","Fensterskalierung","scale",0.65,1.3,0.05)
+    Slider(-310,"Columns","Spalten","columns",6,16,1)
+    Slider(-385,"Background transparency","Hintergrundtransparenz","backgroundTransparency",0,0.8,0.01)
     local reset=self:Button(parent,self:T("Reset position and size","Position und Größe zurücksetzen"),300,function()
         self.db.x=nil; self.db.y=nil; self.db.scale=1; self.db.columns=10
         PatchToolsBagsOptionscale:SetValue(1)
         PatchToolsBagsOptioncolumns:SetValue(10)
         self:CreateWindow(); self:PlaceWindow(); self:QueueRefresh()
     end)
-    reset:SetPoint("TOPLEFT",0,-435)
+    reset:SetPoint("TOPLEFT",0,-465)
     local note=self:Text(parent,self:T("Drag the title to move; drag the lower right corner to scale. Reset: /ptbags reset\nSort orders the display and merges partial stacks; manual placement is retained. Quest and protected items are never marked for sale.","Titelleiste ziehen: verschieben. Ecke unten rechts ziehen: skalieren. Reset: /ptbags reset\nSortieren ordnet die Anzeige und führt Teilstapel zusammen. Manuelle Plätze bleiben bestehen. Questitems und geschützte Items erhalten keine Verkaufsmarkierung."),12)
-    note:SetPoint("TOPLEFT",0,-490); note:SetWidth(560); note:SetJustifyH("LEFT")
+    note:SetPoint("TOPLEFT",0,-510); note:SetWidth(560); note:SetJustifyH("LEFT")
 end

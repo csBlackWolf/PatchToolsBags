@@ -141,9 +141,10 @@ events:SetScript("OnEvent",function(_,event)
         end
         PatchToolsBagsDB=PatchToolsBagsDB or {}
         Bags.db=PatchToolsBagsDB
-        for k,v in pairs({replaceBags=true,markers=true,columns=10,scale=1}) do if Bags.db[k]==nil then Bags.db[k]=v end end
+        for k,v in pairs({replaceBags=true,markers=true,columns=10,scale=1,backgroundTransparency=0}) do if Bags.db[k]==nil then Bags.db[k]=v end end
         Bags.db.columns=math.max(6,math.min(16,tonumber(Bags.db.columns) or 10))
         Bags.db.scale=math.max(0.65,math.min(1.3,tonumber(Bags.db.scale) or 1))
+        Bags.db.backgroundTransparency=math.max(0,math.min(0.8,tonumber(Bags.db.backgroundTransparency) or 0))
         Bags.owner:RegisterOptionsPage("bags",Bags:T("Bags","Taschen"),function(parent) Bags:BuildOptions(parent) end)
         Bags:InstallBagAccess()
         SLASH_PATCHTOOLSBAGS1="/ptbags"; SLASH_PATCHTOOLSBAGS2="/patchtoolsbags"
@@ -153,9 +154,13 @@ events:SetScript("OnEvent",function(_,event)
                 Bags:CreateWindow(); Bags:PlaceWindow(); Bags.window:Show(); Bags:QueueRefresh()
             else Bags:Toggle() end
         end
-        for _,e in ipairs({"BAG_UPDATE_DELAYED","ITEM_LOCK_CHANGED","GET_ITEM_INFO_RECEIVED","PLAYER_MONEY","BAG_UPDATE_COOLDOWN","QUEST_LOG_UPDATE"}) do events:RegisterEvent(e) end
+        for _,e in ipairs({"BAG_UPDATE_DELAYED","ITEM_LOCK_CHANGED","GET_ITEM_INFO_RECEIVED","PLAYER_MONEY","BAG_UPDATE_COOLDOWN","QUEST_LOG_UPDATE","PLAYER_EQUIPMENT_CHANGED","PLAYER_LEVEL_UP","ADDON_LOADED"}) do events:RegisterEvent(e) end
         for _,method in ipairs({"SetItemRule","SetOption"}) do
             if type(Bags.owner[method])=="function" then hooksecurefunc(Bags.owner,method,function() Bags:QueueRefresh() end) end
         end
-    elseif Bags.db then Bags:QueueRefresh() end
+    elseif Bags.db then
+        if event=="PLAYER_EQUIPMENT_CHANGED" or event=="PLAYER_LEVEL_UP" or event=="GET_ITEM_INFO_RECEIVED" or event=="ADDON_LOADED" then
+            Bags:InvalidatePawnUpgrades()
+        else Bags:QueueRefresh() end
+    end
 end)

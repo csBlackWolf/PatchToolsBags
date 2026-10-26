@@ -25,6 +25,18 @@ function Bags:PlaceWindow()
     if self.db.x and self.db.y then f:SetPoint("TOPLEFT",UIParent,"BOTTOMLEFT",self.db.x,self.db.y)
     else f:SetPoint("CENTER",UIParent,"CENTER",130,0) end
 end
+function Bags:ApplyBackgroundTransparency()
+    if self.window then
+        local value=math.max(0,math.min(0.8,tonumber(self.db.backgroundTransparency) or 0))
+        self.window:SetBackdropColor(0.045,0.035,0.025,0.97*(1-value))
+    end
+end
+function Bags:OpenSettings()
+    if self.owner and self.owner.OpenOptions then
+        self.owner:OpenOptions()
+        if self.owner.SelectOptionsPage then self.owner:SelectOptionsPage("bags") end
+    end
+end
 -- Preserve the explicit anchor while Blizzard builds comparisons. Position the
 -- whole visible group afterwards, rather than triggering Classic's NONE branch.
 function Bags:UpdateItemCursor(button)
@@ -87,7 +99,7 @@ function Bags:ResetItemDecorations(button)
         local texture=button[getter] and button[getter](button)
         if texture then texture:SetAlpha(0) end
     end
-    for _,key in ipairs({"IconBorder","IconOverlay","BattlepayItemTexture","NewItemTexture","flash","ExtendedSlot","ExtendedOverlay","ExtendedOverlay2","BagStaticTop","BagStaticBottom"}) do
+    for _,key in ipairs({"IconBorder","IconOverlay","UpgradeIcon","BattlepayItemTexture","NewItemTexture","flash","ExtendedSlot","ExtendedOverlay","ExtendedOverlay2","BagStaticTop","BagStaticBottom"}) do
         if button[key] then button[key]:Hide() end
     end
 end
@@ -134,6 +146,9 @@ function Bags:CreateItemButton(parent,bag,slot)
         icon:ClearAllPoints(); icon:SetPoint("TOPLEFT",1,-1); icon:SetPoint("BOTTOMRIGHT",-1,1)
     end
     b.mark=b:CreateTexture(nil,"OVERLAY",nil,7); b.mark:SetSize(13,13); b.mark:SetPoint("TOPLEFT",4,-6)
+    b.pawnUpgrade=b:CreateTexture(nil,"OVERLAY",nil,7)
+    b.pawnUpgrade:SetAtlas("bags-greenarrow")
+    b.pawnUpgrade:SetSize(13,13); b.pawnUpgrade:SetPoint("BOTTOMRIGHT",-3,3); b.pawnUpgrade:Hide()
     b.markShadows={}
     for _,offset in ipairs({{-1,0},{1,0},{0,-1},{0,1},{-1,-1},{1,-1},{-1,1},{1,1}}) do
         local shadow=b:CreateTexture(nil,"OVERLAY",nil,6)
@@ -179,6 +194,18 @@ function Bags:CreateWindow()
         GameTooltip:Show()
     end)
     help:SetScript("OnLeave",function() if GameTooltip:GetOwner()==help then GameTooltip:Hide() end end)
+    local settings=self:Button(header,"",20,function() self:OpenSettings() end)
+    f.settings=settings
+    settings:SetHeight(20); settings:SetPoint("RIGHT",help,"LEFT",-4,0)
+    local cog=settings:CreateTexture(nil,"ARTWORK")
+    cog:SetTexture("Interface\\Icons\\INV_Misc_Gear_01")
+    cog:SetPoint("TOPLEFT",3,-3); cog:SetPoint("BOTTOMRIGHT",-3,3)
+    settings:SetScript("OnEnter",function()
+        GameTooltip:SetOwner(settings,"ANCHOR_TOP")
+        GameTooltip:SetText(self:T("Bag settings · size, columns and background transparency","Tascheneinstellungen · Größe, Spalten und Hintergrundtransparenz"),1,0.82,0,1,true)
+        GameTooltip:Show()
+    end)
+    settings:SetScript("OnLeave",function() if GameTooltip:GetOwner()==settings then GameTooltip:Hide() end end)
     local grip=CreateFrame("Button",nil,f)
     grip:SetSize(16,16); grip:SetPoint("BOTTOMRIGHT",-1,1)
     grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
@@ -233,6 +260,7 @@ function Bags:SectionIcon(section)
 end
 function Bags:RefreshWindow()
     local slots=self:Scan(); local f=self.window
+    self:ApplyBackgroundTransparency()
     local sections=self:Sections(slots)
     local available=UIParent:GetHeight()/self.db.scale-160
     local columns=math.max(self.db.columns,math.ceil(#slots/math.max(1,math.floor(available/37))))
@@ -289,6 +317,7 @@ function Bags:RefreshWindow()
         end
         y=y+math.max(40,math.ceil(#section.slots/columns)*37)+4
     end
+    local pawnEnabled=self:ConnectPawn()
     local used=0
     local active={}
     local marks={
@@ -321,6 +350,13 @@ function Bags:RefreshWindow()
             else icon:SetVertexColor(0.065,0.055,0.04) end
         end
         SetItemButtonCount(b,s.info and s.info.stackCount or 0)
+        local upgrade=pawnEnabled and s.info and self:PawnUpgrade(s.info.hyperlink) or false
+        b.pawnUpgrade:SetShown(upgrade)
+        if b.Count then
+            b.Count:ClearAllPoints()
+            if upgrade then b.Count:SetPoint("BOTTOMLEFT",2,2)
+            else b.Count:SetPoint("BOTTOMRIGHT",-2,2) end
+        end
         SetItemButtonDesaturated(b,s.info and s.info.isLocked or false)
         if s.info then used=used+1 end
         local q=s.info and s.info.quality

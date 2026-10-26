@@ -10,4 +10,5 @@ for source in root.glob('*.lua'):
     lua.execute('assert(loadfile(...))', source.as_posix())
 lua.execute(Path('tests/model.lua').read_text(encoding='utf-8'))
 lua.execute(Path('tests/runtime.lua').read_text(encoding='utf-8'))
+LuaRuntime().execute(Path('tests/pawn.lua').read_text(encoding='utf-8'))
 print('PASS: Lua syntax, sorting conservation and runtime interaction checks.')

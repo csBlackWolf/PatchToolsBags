@@ -1,3 +1,10 @@
+# PatchToolsBags 0.1.2-local.1 — local test — 2026-10-26
+
+- Add a bottom-right Pawn upgrade arrow using Pawn's bag advisor and settings.
+- Keep stack counts clear of upgrade arrows and refresh after Pawn/equipment changes.
+- Add background transparency and a gear button that opens the bag settings directly.
+- Pawn remains optional. This build is for local testing, not a public release.
+
 # PatchToolsBags 0.1.1 — 2026-10-25
 
 - Restore the merchant sale cursor when hovering over bag items while the merchant's selling tab is open.

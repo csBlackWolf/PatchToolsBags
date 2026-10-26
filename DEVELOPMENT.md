@@ -7,6 +7,7 @@ PatchToolsBags is a separate optional PatchTools module. This guide explains the
 - `Core.lua` handles initialization, events and bag-window integration.
 - `Model.lua` classifies items, filters searches, plans display order and stack merging.
 - `Window.lua` builds and refreshes the bag window and its native item buttons.
+- `Pawn.lua` uses the optional public Pawn bag-arrow API, caches completed answers, retries budgeted results and invalidates on Pawn callbacks. Register with Pawn only while replacing the native bag window.
 - `Options.lua` registers settings with PatchTools extension API 1.
 - The TOC defines dependencies, load order and saved variables.
 

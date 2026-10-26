@@ -127,6 +127,7 @@ C_Container={
  end}
 C_Item={GetItemInfo=function(link) local id=tonumber(link:match('%d+')); return 'Item '..id,link,2,1,1,'Type','Subtype',20,'',1,1,id%4,0 end}
 assert(loadfile('Core.lua'))('PatchToolsBags',Bags)
+assert(loadfile('Pawn.lua'))('PatchToolsBags',Bags)
 assert(loadfile('Window.lua'))('PatchToolsBags',Bags)
 assert(loadfile('Options.lua'))('PatchToolsBags',Bags)
 local eventFrame=frames[#frames]
@@ -270,3 +271,23 @@ IsModifiedClick=function(kind) return kind=='DRESSUP' end
 Bags:UpdateItemCursor(itemButton); assert(cursorMode=='inspect')
 IsModifiedClick=function() return false end
 print('PASS: sale, buyback, merchant close, repair, inspect and pet-feed cursor modes.')
+
+PawnPlayerFullName='Test'; PawnCommon={ShowBagUpgradeAdvisor=true}
+PawnShouldItemLinkHaveUpgradeArrow=function() return true end
+itemButton.Count=CreateFrame('FontString')
+Bags:RefreshWindow()
+assert(itemButton.pawnUpgrade:IsShown(),'Pawn upgrades need a visible arrow')
+assert(itemButton.pawnUpgrade.point[1]=='BOTTOMRIGHT')
+assert(itemButton.Count.point[1]=='BOTTOMLEFT','stack count must not overlap upgrade arrow')
+PawnCommon.ShowBagUpgradeAdvisor=false
+Bags:RefreshWindow(); assert(not itemButton.pawnUpgrade:IsShown())
+assert(itemButton.Count.point[1]=='BOTTOMRIGHT')
+local opened,page
+Bags.owner.OpenOptions=function() opened=true end
+Bags.owner.SelectOptionsPage=function(_,id) page=id end
+Bags.window.settings.scripts.OnClick(); assert(opened and page=='bags')
+function methods:SetBackdropColor(...) self.background={...} end
+Bags.db.backgroundTransparency=.6; Bags:ApplyBackgroundTransparency()
+assert(math.abs(Bags.window.background[4]-.388)<.000001)
+assert(Bags.window.alpha==nil,'transparency must affect background only')
+print('PASS: bottom-right Pawn arrow, nonoverlapping count, direct settings and background-only transparency.')
