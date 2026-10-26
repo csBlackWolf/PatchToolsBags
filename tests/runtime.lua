@@ -290,4 +290,20 @@ function methods:SetBackdropColor(...) self.background={...} end
 Bags.db.backgroundTransparency=.6; Bags:ApplyBackgroundTransparency()
 assert(math.abs(Bags.window.background[4]-.388)<.000001)
 assert(Bags.window.alpha==nil,'transparency must affect background only')
+Bags:RefreshWindow()
+local emptyButton
+for _,button in pairs(Bags.buttons) do
+    local icon=button.icon or _G[button:GetName()..'IconTexture']
+    if button.hasItem then
+        if icon then assert(icon.vertex[4]==1,'occupied item icons stay opaque') end
+        assert(button.edge.vertex[4]==1,'occupied item borders stay opaque')
+    else
+        emptyButton=button
+        if icon then assert(math.abs(icon.vertex[4]-.4)<.000001,'empty fill follows background transparency') end
+        assert(math.abs(button.edge.vertex[4]-.4)<.000001,'empty border follows background transparency')
+    end
+end
+assert(emptyButton,'fixture includes empty slots')
+Bags.db.backgroundTransparency=0; Bags:RefreshWindow()
+assert(emptyButton.edge.vertex[4]==1,'restoring opacity restores empty slots too')
 print('PASS: bottom-right Pawn arrow, nonoverlapping count, direct settings and background-only transparency.')

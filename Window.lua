@@ -261,6 +261,7 @@ end
 function Bags:RefreshWindow()
     local slots=self:Scan(); local f=self.window
     self:ApplyBackgroundTransparency()
+    local emptyAlpha=1-math.max(0,math.min(0.8,tonumber(self.db.backgroundTransparency) or 0))
     local sections=self:Sections(slots)
     local available=UIParent:GetHeight()/self.db.scale-160
     local columns=math.max(self.db.columns,math.ceil(#slots/math.max(1,math.floor(available/37))))
@@ -346,8 +347,8 @@ function Bags:RefreshWindow()
         SetItemButtonTexture(b,s.info and s.info.iconFileID or "Interface\\Buttons\\WHITE8X8")
         local icon=b.icon or _G[b:GetName().."IconTexture"]
         if icon then
-            if s.info then icon:SetVertexColor(1,1,1)
-            else icon:SetVertexColor(0.065,0.055,0.04) end
+            if s.info then icon:SetVertexColor(1,1,1,1)
+            else icon:SetVertexColor(0.065,0.055,0.04,emptyAlpha) end
         end
         SetItemButtonCount(b,s.info and s.info.stackCount or 0)
         local upgrade=pawnEnabled and s.info and self:PawnUpgrade(s.info.hyperlink) or false
@@ -362,7 +363,7 @@ function Bags:RefreshWindow()
         local q=s.info and s.info.quality
         local color=q and q>=2 and ITEM_QUALITY_COLORS[q]
         if s.mark=="quest" then b.edge:SetVertexColor(1,0.78,0.08,1)
-        else b.edge:SetVertexColor(color and color.r*0.9 or 0.25,color and color.g*0.9 or 0.22,color and color.b*0.9 or 0.15,1) end
+        else b.edge:SetVertexColor(color and color.r*0.9 or 0.25,color and color.g*0.9 or 0.22,color and color.b*0.9 or 0.15,s.info and 1 or emptyAlpha) end
         local mark=self.db.markers and s.mark
         -- Use the same coin for both sale lists and junk, with grey denoting junk.
         -- Quest and blocklist protection still win.

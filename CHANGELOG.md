@@ -1,3 +1,7 @@
+# PatchToolsBags 0.1.2-local.2 — local test — 2026-10-26
+
+- Apply background transparency to empty slot fills and borders; keep occupied icons and rarity borders opaque.
+
 # PatchToolsBags 0.1.2-local.1 — local test — 2026-10-26
 
 - Add a bottom-right Pawn upgrade arrow using Pawn's bag advisor and settings.
