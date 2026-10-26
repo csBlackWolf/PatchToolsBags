@@ -21,7 +21,9 @@ function Bags:ConnectPawn()
     end
     -- A separate preview must not take over Pawn's native bag integration.
     if not self.pawnRegistered then self.pawnUpgradeCache={} end
-    return available and PawnCommon.ShowBagUpgradeAdvisor
+    -- Pawn's ShowBagUpgradeAdvisor controls its default-container renderer.
+    -- Our own arrows have an independent preference, like other bag addons.
+    return available and self.db.pawnUpgrades~=false
 end
 
 function Bags:PawnUpgrade(link)

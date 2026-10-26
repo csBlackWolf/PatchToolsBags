@@ -141,7 +141,7 @@ events:SetScript("OnEvent",function(_,event)
         end
         PatchToolsBagsDB=PatchToolsBagsDB or {}
         Bags.db=PatchToolsBagsDB
-        for k,v in pairs({replaceBags=true,markers=true,columns=10,scale=1,backgroundTransparency=0}) do if Bags.db[k]==nil then Bags.db[k]=v end end
+        for k,v in pairs({replaceBags=true,markers=true,pawnUpgrades=true,columns=10,scale=1,backgroundTransparency=0}) do if Bags.db[k]==nil then Bags.db[k]=v end end
         Bags.db.columns=math.max(6,math.min(16,tonumber(Bags.db.columns) or 10))
         Bags.db.scale=math.max(0.65,math.min(1.3,tonumber(Bags.db.scale) or 1))
         Bags.db.backgroundTransparency=math.max(0,math.min(0.8,tonumber(Bags.db.backgroundTransparency) or 0))

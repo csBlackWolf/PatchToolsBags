@@ -1,3 +1,7 @@
+# PatchToolsBags 0.1.2-local.3 — local test — 2026-10-26
+
+- Give Pawn arrows an independent bag option, enabled by default. The native Pawn bag-arrow setting no longer suppresses PatchToolsBags arrows.
+
 # PatchToolsBags 0.1.2-local.2 — local test — 2026-10-26
 
 - Apply background transparency to empty slot fills and borders; keep occupied icons and rarity borders opaque.

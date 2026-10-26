@@ -280,6 +280,8 @@ assert(itemButton.pawnUpgrade:IsShown(),'Pawn upgrades need a visible arrow')
 assert(itemButton.pawnUpgrade.point[1]=='BOTTOMRIGHT')
 assert(itemButton.Count.point[1]=='BOTTOMLEFT','stack count must not overlap upgrade arrow')
 PawnCommon.ShowBagUpgradeAdvisor=false
+Bags:RefreshWindow(); assert(itemButton.pawnUpgrade:IsShown(),'native Pawn arrows can be disabled independently')
+Bags.db.pawnUpgrades=false
 Bags:RefreshWindow(); assert(not itemButton.pawnUpgrade:IsShown())
 assert(itemButton.Count.point[1]=='BOTTOMRIGHT')
 local opened,page

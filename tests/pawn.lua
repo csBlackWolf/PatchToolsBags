@@ -1,4 +1,4 @@
-local bags={}
+local bags={db={}}
 assert(loadfile('Pawn.lua'))('PatchToolsBags',bags)
 local queue,refreshes,replace={},0,true
 function bags:QueueRefresh() refreshes=refreshes+1 end
@@ -25,5 +25,6 @@ assert(not bags:PawnUpgrade('pending'))
 callback(); assert(bags.pawnUpgradeCache.upgrade==nil)
 assert(bags:PawnUpgrade('upgrade'))
 replace=false; bags:ConnectPawn(); assert(unregistered==1,'preview must leave native bag integration enabled')
-PawnCommon.ShowBagUpgradeAdvisor=false; assert(not bags:ConnectPawn())
+PawnCommon.ShowBagUpgradeAdvisor=false; assert(bags:ConnectPawn(),'Pawn native-bag preference must not hide our arrows')
+bags.db.pawnUpgrades=false; assert(not bags:ConnectPawn(),'our own arrow preference is respected')
 print('PASS: optional Pawn, budget retry, cache invalidation, native bag fallback and arrow preference.')
