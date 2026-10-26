@@ -141,16 +141,20 @@ events:SetScript("OnEvent",function(_,event)
         end
         PatchToolsBagsDB=PatchToolsBagsDB or {}
         Bags.db=PatchToolsBagsDB
-        for k,v in pairs({replaceBags=true,markers=true,pawnUpgrades=true,columns=10,scale=1,backgroundTransparency=0}) do if Bags.db[k]==nil then Bags.db[k]=v end end
-        Bags.db.columns=math.max(6,math.min(16,tonumber(Bags.db.columns) or 10))
-        Bags.db.scale=math.max(0.65,math.min(1.3,tonumber(Bags.db.scale) or 1))
+        if type(PatchToolsBagsCharacterDB)~="table" then
+            PatchToolsBagsCharacterDB={scale=Bags.db.scale,columns=Bags.db.columns,x=Bags.db.x,y=Bags.db.y}
+        end
+        Bags.windowDB=PatchToolsBagsCharacterDB
+        for k,v in pairs({replaceBags=true,markers=true,pawnUpgrades=true,backgroundTransparency=0}) do if Bags.db[k]==nil then Bags.db[k]=v end end
+        Bags.windowDB.columns=math.max(6,math.min(16,tonumber(Bags.windowDB.columns) or 10))
+        Bags.windowDB.scale=math.max(0.65,math.min(1.3,tonumber(Bags.windowDB.scale) or 1))
         Bags.db.backgroundTransparency=math.max(0,math.min(0.8,tonumber(Bags.db.backgroundTransparency) or 0))
         Bags.owner:RegisterOptionsPage("bags",Bags:T("Bags","Taschen"),function(parent) Bags:BuildOptions(parent) end)
         Bags:InstallBagAccess()
         SLASH_PATCHTOOLSBAGS1="/ptbags"; SLASH_PATCHTOOLSBAGS2="/patchtoolsbags"
         SlashCmdList.PATCHTOOLSBAGS=function(msg)
             if msg:lower():match("^%s*reset%s*$") then
-                Bags.db.x=nil; Bags.db.y=nil; Bags.db.scale=1; Bags.db.columns=10
+                Bags.windowDB.x=nil; Bags.windowDB.y=nil; Bags.windowDB.scale=1; Bags.windowDB.columns=10
                 Bags:CreateWindow(); Bags:PlaceWindow(); Bags.window:Show(); Bags:QueueRefresh()
             else Bags:Toggle() end
         end

@@ -38,3 +38,5 @@ In-game checks still matter for protected actions, feeding, vendor cursors, comb
 Public releases use `main`; `alpha/prototype` preserves the initial prototype history. Keep technical explanations here and practical controls in [GUIDE.md](GUIDE.md). The README is the short player-facing presentation shared with CurseForge.
 
 See [RELEASING.md](RELEASING.md) for packaging and publication, [CHANGELOG.md](CHANGELOG.md) for changes and the [PatchTools extension guide](https://github.com/csBlackWolf/PatchTools/blob/main/EXTENSIONS.md) for settings integration. Keep commit messages and documentation direct: describe the change and its purpose without conversational notes or assumptions about who is doing the work.
+
+Window position, scale and column count use `PatchToolsBagsCharacterDB` (`SavedVariablesPerCharacter`). Import the old account geometry once for each character; later changes and resets stay local to that character. Background transparency and the other bag preferences remain account-wide in `PatchToolsBagsDB`. Display-slot ordering keeps its existing character-specific storage.

@@ -21,8 +21,8 @@ function Bags:Button(parent,text,width,callback)
 end
 function Bags:PlaceWindow()
     local f=self.window
-    f:SetScale(self.db.scale); f:ClearAllPoints()
-    if self.db.x and self.db.y then f:SetPoint("TOPLEFT",UIParent,"BOTTOMLEFT",self.db.x,self.db.y)
+    f:SetScale(self.windowDB.scale); f:ClearAllPoints()
+    if self.windowDB.x and self.windowDB.y then f:SetPoint("TOPLEFT",UIParent,"BOTTOMLEFT",self.windowDB.x,self.windowDB.y)
     else f:SetPoint("CENTER",UIParent,"CENTER",130,0) end
 end
 function Bags:ApplyBackgroundTransparency()
@@ -168,7 +168,7 @@ function Bags:CreateWindow()
     header:EnableMouse(true); header:RegisterForDrag("LeftButton")
     header:SetScript("OnDragStart",function() f:StartMoving() end)
     header:SetScript("OnDragStop",function()
-        f:StopMovingOrSizing(); self.db.x=f:GetLeft(); self.db.y=f:GetTop()
+        f:StopMovingOrSizing(); self.windowDB.x=f:GetLeft(); self.windowDB.y=f:GetTop()
     end)
     local title=self:Text(header,"PatchToolsBags",14); title:SetPoint("LEFT",6,0)
     local close=self:Button(header,"×",20,function() f:Hide() end); close:SetHeight(20); close:SetPoint("RIGHT",-5,0)
@@ -219,20 +219,20 @@ function Bags:CreateWindow()
     grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
     local function StopScaling()
         grip:SetScript("OnUpdate",nil)
-        self.db.x=f:GetLeft(); self.db.y=f:GetTop()
+        self.windowDB.x=f:GetLeft(); self.windowDB.y=f:GetTop()
     end
     grip:SetScript("OnMouseDown",function(_,button)
         if button~="LeftButton" then return end
         local cursorX,cursorY=GetCursorPosition()
         local uiScale=UIParent:GetEffectiveScale()
-        local initial=self.db.scale
+        local initial=self.windowDB.scale
         local left,top=f:GetLeft()*initial,f:GetTop()*initial
         local span=f:GetWidth()+f:GetHeight()
         grip:SetScript("OnUpdate",function()
             if not IsMouseButtonDown("LeftButton") then StopScaling(); return end
             local x,y=GetCursorPosition()
             local value=math.max(0.65,math.min(1.3,initial+((x-cursorX)-(y-cursorY))/uiScale/span))
-            self.db.scale=value
+            self.windowDB.scale=value
             f:SetScale(value)
             f:ClearAllPoints(); f:SetPoint("TOPLEFT",UIParent,"BOTTOMLEFT",left/value,top/value)
         end)
@@ -269,8 +269,8 @@ function Bags:RefreshWindow()
     self:ApplyBackgroundTransparency()
     local emptyAlpha=1-math.max(0,math.min(0.8,tonumber(self.db.backgroundTransparency) or 0))
     local sections=self:Sections(slots)
-    local available=UIParent:GetHeight()/self.db.scale-160
-    local columns=math.max(self.db.columns,math.ceil(#slots/math.max(1,math.floor(available/37))))
+    local available=UIParent:GetHeight()/self.windowDB.scale-160
+    local columns=math.max(self.windowDB.columns,math.ceil(#slots/math.max(1,math.floor(available/37))))
     columns=math.min(20,columns)
     local function ContentHeight()
         local height=0
@@ -279,7 +279,7 @@ function Bags:RefreshWindow()
     end
     while ContentHeight()>available and columns<20 do columns=columns+1 end
     f:SetSize(math.max(300,columns*37+30),ContentHeight()+80)
-    f:SetScale(self.db.scale)
+    f:SetScale(self.windowDB.scale)
     self.sectionBadges=self.sectionBadges or {}
     for _,badge in ipairs(self.sectionBadges) do badge:Hide() end
     local y=58

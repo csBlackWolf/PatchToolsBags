@@ -133,7 +133,10 @@ assert(loadfile('Options.lua'))('PatchToolsBags',Bags)
 local eventFrame=frames[#frames]
 -- Locate the event frame, since files loaded after it need not create frames.
 for _,f in ipairs(frames) do if f.events.PLAYER_LOGIN then eventFrame=f end end
+PatchToolsBagsDB={scale=.85,columns=12,x=100,y=700,backgroundTransparency=.3}
 eventFrame.scripts.OnEvent(eventFrame,'PLAYER_LOGIN')
+assert(Bags.windowDB==PatchToolsBagsCharacterDB and Bags.windowDB.scale==.85
+    and Bags.windowDB.columns==12 and Bags.windowDB.x==100 and Bags.windowDB.y==700)
 assert(PatchTools.builder)
 PatchTools.builder(CreateFrame('Frame'))
 ToggleBackpack(); assert(originalToggles==1,'Other bag addon must retain access')
@@ -211,7 +214,7 @@ Bags.layout=nil; Bags:RefreshWindow()
 assert(target.point[4]==targetX and target.point[5]==targetY,'Layout must survive reconstruction from saved settings')
 
 SlashCmdList.PATCHTOOLSBAGS('reset'); drain()
-assert(Bags.db.scale==1 and Bags.db.columns==10)
+assert(Bags.windowDB.scale==1 and Bags.windowDB.columns==10)
 -- Comparison groups fit as a whole, even when neither side has enough space.
 function methods:SetPoint(...) self.point={...} end
 function methods:SetOwner(owner,anchor) self.owner=owner; self.anchor=anchor end
@@ -309,3 +312,17 @@ assert(emptyButton,'fixture includes empty slots')
 Bags.db.backgroundTransparency=0; Bags:RefreshWindow()
 assert(emptyButton.edge.vertex[4]==1,'restoring opacity restores empty slots too')
 print('PASS: bottom-right Pawn arrow, nonoverlapping count, direct settings and background-only transparency.')
+
+local account=PatchToolsBagsDB
+local first=Bags.windowDB
+first.scale=.7; first.columns=8; first.x=77
+account.backgroundTransparency=.4
+PatchToolsBagsCharacterDB=nil; eventFrame.scripts.OnEvent(eventFrame,'PLAYER_LOGIN')
+assert(Bags.windowDB~=first and Bags.windowDB.scale==.85 and Bags.windowDB.columns==12)
+Bags.windowDB.scale=1.2; Bags.windowDB.columns=16
+PatchToolsBagsCharacterDB=first; eventFrame.scripts.OnEvent(eventFrame,'PLAYER_LOGIN')
+assert(Bags.windowDB.scale==.7 and Bags.windowDB.columns==8 and Bags.windowDB.x==77)
+SlashCmdList.PATCHTOOLSBAGS('reset'); eventFrame.scripts.OnEvent(eventFrame,'PLAYER_LOGIN')
+assert(Bags.windowDB.scale==1 and Bags.windowDB.columns==10 and Bags.windowDB.x==nil)
+assert(Bags.db==account and account.scale==.85 and account.columns==12 and account.backgroundTransparency==.4)
+print('PASS: bag character migration, separate position/scale/columns, reset and global transparency.')
