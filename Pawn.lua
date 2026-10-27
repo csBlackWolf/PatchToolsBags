@@ -31,7 +31,9 @@ function Bags:PawnUpgrade(link)
     self.pawnUpgradeCache=self.pawnUpgradeCache or {}
     local cached=self.pawnUpgradeCache[link]
     if cached~=nil then return cached end
-    local ok,result=pcall(PawnShouldItemLinkHaveUpgradeArrow,link,true)
+    -- Keep future upgrades visible even before their minimum level is reached.
+    -- Pawn still decides whether the item improves an enabled character scale.
+    local ok,result=pcall(PawnShouldItemLinkHaveUpgradeArrow,link,false)
     if not ok then return false end
     if result~=nil then
         self.pawnUpgradeCache[link]=result==true

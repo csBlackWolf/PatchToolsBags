@@ -5,6 +5,7 @@ Public alpha test: bugs are possible. The stable release remains available.
 - Show equipped and locked bank-bag slots directly in the Classic Era bank window.
 - Add the native bank-slot purchase button and price, keeping Blizzard's purchase confirmation.
 - Fix tooltips for items in the main Classic Era bank storage.
+- Show Pawn upgrade arrows even when the item requires a higher character level.
 
 Please test bank-item tooltips, replacing bank bags and unlocking additional slots. Forever keeps its separate native bank-tab management. Automated interaction and restoration checks passed; in-game confirmation is pending.
 

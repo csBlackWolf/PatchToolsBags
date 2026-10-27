@@ -12,9 +12,9 @@ function PawnRegisterThirdPartyBag(name,api) assert(name=='PatchToolsBags'); reg
 function PawnUnregisterThirdPartyBag(name) assert(name=='PatchToolsBags'); unregistered=unregistered+1 end
 local pending=true
 function PawnShouldItemLinkHaveUpgradeArrow(link,checkLevel)
-    assert(checkLevel==true); calls=calls+1
+    assert(checkLevel==false); calls=calls+1
     if link=='pending' and pending then return nil end
-    return link=='upgrade'
+    return link=='upgrade' or link=='requires-level-20'
 end
 assert(bags:ConnectPawn()); bags:ConnectPawn(); assert(registered==1)
 assert(bags:PawnUpgrade('upgrade')); assert(bags:PawnUpgrade('upgrade')); assert(calls==1)
@@ -27,4 +27,6 @@ assert(bags:PawnUpgrade('upgrade'))
 replace=false; bags:ConnectPawn(); assert(unregistered==1,'preview must leave native bag integration enabled')
 PawnCommon.ShowBagUpgradeAdvisor=false; assert(bags:ConnectPawn(),'Pawn native-bag preference must not hide our arrows')
 bags.db.pawnUpgrades=false; assert(not bags:ConnectPawn(),'our own arrow preference is respected')
+bags.db.pawnUpgrades=true; assert(bags:ConnectPawn())
+assert(bags:PawnUpgrade('requires-level-20'),'an upgrade above the current level must keep its arrow')
 print('PASS: optional Pawn, budget retry, cache invalidation, native bag fallback and arrow preference.')
