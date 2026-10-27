@@ -1,7 +1,7 @@
 local _,Bags=...
 function Bags:BuildOptions(parent)
-    local title=self:Text(parent,"PatchToolsBags · 0.1.2-alpha.4",16); title:SetPoint("TOPLEFT",0,-5)
-    local intro=self:Text(parent,self:T("Shared carried bags. Alpha prototype — please report unexpected behavior.","Gemeinsame mitgeführte Taschen. Alpha-Prototyp – unerwartetes Verhalten bitte melden."),12)
+    local title=self:Text(parent,"PatchToolsBags · 0.1.2",16); title:SetPoint("TOPLEFT",0,-5)
+    local intro=self:Text(parent,self:T("Your bags and bank in a compact window.","Deine Taschen und Bank in einem kompakten Fenster."),12)
     intro:SetPoint("TOPLEFT",0,-43); intro:SetWidth(560); intro:SetJustifyH("LEFT")
     local function Check(y,en,de,key)
         local b=CreateFrame("CheckButton",nil,parent,"UICheckButtonTemplate")

@@ -1,3 +1,22 @@
+# PatchToolsBags 0.1.2 — 2026-10-27
+
+The tested bag and bank improvements are now part of the regular release.
+
+- A compact bank window with search, sorting and separate specialty-bag sections.
+- Open bank bag slots with the Bank bags button; insert or change bags using the usual controls.
+- Click a locked bank bag slot or drop a bag onto it to open Blizzard's purchase confirmation. The bag stays on the cursor.
+- Access Blizzard's original bank view from settings.
+- Optional sorting when opening bags or the bank, disabled by default. In combat only the display is sorted; stack merging runs outside combat.
+- Larger Pawn upgrade arrows, including future upgrades above your current level, with a setting to hide them.
+- Adjustable background transparency, including empty slots, and direct settings access from the bag window.
+- Position, size and columns saved separately for each character, with separate bank geometry.
+- Correct main-bank item tooltips and improved native drag/drop, merchant cursors and item highlights.
+- `/ptbags debug` opens the shared diagnostic report with addon versions and load states.
+
+Requires PatchTools. Recommended companion: PatchTools 0.9.0.
+
+Validation: Classic Era gameplay testing by the maintainer and testers, plus automated inventory, bank and Era/Forever compatibility checks. Live Forever bank testing remains pending.
+
 # PatchToolsBags 0.1.2-alpha.4 — 2026-10-27
 
 - Add `/ptbags debug` for a copyable diagnostic report (requires the matching PatchTools update).

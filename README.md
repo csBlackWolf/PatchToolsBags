@@ -10,6 +10,8 @@ _A compact bag addon for PatchTools with fast item sorting for Classic Era and F
 - Colored borders matching item rarity, with gold borders for quest items
 - Visual markers for quest items, junk and items marked for sale
 - All bags in one window, with separate sections for specialty bags
+- A matching bank window and optional sorting when opened
+- Pawn upgrade arrows and adjustable background transparency
 - A compact, movable and scalable window in the PatchTools style
 
 **[PatchTools](https://www.curseforge.com/wow/addons/patchtools) is required and must be enabled!**
@@ -20,6 +22,7 @@ _A compact bag addon for PatchTools with fast item sorting for Classic Era and F
 | --- | --- |
 | `/ptbags debug` | Open a copyable diagnostic report with addon versions and load states. |
 | `/ptbags` | Open or close the bag window. |
+| `/ptbags bank` | Return to the compact bank view while visiting the banker. |
 | `/ptbags reset` | Reset the window position, size and columns. |
 
 You can also use `/patchtoolsbags` instead of `/ptbags`.
@@ -42,6 +45,8 @@ _Ein kompaktes Taschen-Addon für PatchTools mit schneller Item-Sortierung für 
 - Farbige Rahmen passend zur Seltenheit der Items und goldene Rahmen für Questitems
 - Symbole für Questitems, Schrott und zum Verkauf vorgesehene Items
 - Alle Taschen in einem Fenster, mit getrennten Bereichen für Spezialtaschen
+- Passendes Bankfenster und optionale Sortierung beim Öffnen
+- Pawn-Verbesserungspfeile und einstellbare Hintergrundtransparenz
 - Ein kompaktes, verschiebbares und skalierbares Fenster im PatchTools-Stil
 
 **[PatchTools](https://www.curseforge.com/wow/addons/patchtools) wird benötigt und muss aktiviert sein!**
@@ -52,6 +57,7 @@ _Ein kompaktes Taschen-Addon für PatchTools mit schneller Item-Sortierung für 
 | --- | --- |
 | `/ptbags debug` | Kopierbaren Diagnosebericht mit Addon-Versionen und Ladestatus öffnen. |
 | `/ptbags` | Taschenfenster öffnen oder schließen. |
+| `/ptbags bank` | Beim Bankier zur kompakten Bankansicht zurückkehren. |
 | `/ptbags reset` | Position, Größe und Spaltenzahl zurücksetzen. |
 
 Statt `/ptbags` funktioniert auch `/patchtoolsbags`.
