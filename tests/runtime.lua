@@ -40,12 +40,24 @@ function methods:GetText() return self.text or '' end
 function methods:GetFont() return 'font',12,'' end
 function methods:GetName() return self.name end
 function methods:GetParent() return self.parent end
+function methods:SetParent(parent) self.parent=parent end
+function methods:GetScale() return self.scale or 1 end
+function methods:GetNumPoints() return self.point and 1 or 0 end
+function methods:GetPoint() return table.unpack(self.point) end
 function methods:SetDesaturated(value) self.desaturated=value end
 function methods:SetAlpha(value) self.alpha=value end
 function methods:SetVertexColor(...) self.vertex={...} end
 function methods:SetTexture(value) self.texture=value end
 function methods:SetBackdropBorderColor(...) self.border={...} end
 function methods:GetOwner() return self.owner end
+function methods:GetAlpha() return self.alpha or 1 end
+function methods:IsMouseEnabled() return self.mouseEnabled~=false end
+function methods:EnableMouse(enabled) self.mouseEnabled=enabled end
+function methods:GetChildren()
+ local children={}
+ for _,frame in ipairs(frames) do if frame.parent==self then children[#children+1]=frame end end
+ return table.unpack(children)
+end
 function methods:SetID(id) self.id=id end
 function methods:GetID() return self.id end
 function methods:SetScale(scale) self.scale=scale end
@@ -58,7 +70,7 @@ function methods:SetChecked(value) self.checked=value end
 function methods:GetChecked() return self.checked end
 function methods:SetValue(value) self.value=value; if self.scripts.OnValueChanged then self.scripts.OnValueChanged(self,value) end end
 function methods:Hide() self.hideCount=(self.hideCount or 0)+1; self.shown=false; if self.scripts.OnHide then self.scripts.OnHide(self) end end
-function methods:Show() self.shown=true; if self.scripts.OnShow then self.scripts.OnShow(self) end end
+function methods:Show() local wasShown=self.shown; self.shown=true; if not wasShown and self.scripts.OnShow then self.scripts.OnShow(self) end end
 function methods:SetShown(value) if value then self:Show() else self:Hide() end end
 function methods:IsShown() return self.shown end
 function methods:Enable() self.enabled=true end
@@ -69,10 +81,13 @@ function CreateFrame(kind,name,parent,template)
  frames[#frames+1]=f
  if name then _G[name]=f end
  if template=='OptionsSliderTemplate' then _G[name..'Low']=CreateFrame('FontString'); _G[name..'High']=CreateFrame('FontString') end
- if template=='ContainerFrameItemButtonTemplate' then
+ if template=='ContainerFrameItemButtonTemplate' or template=='BankItemButtonGenericTemplate' then
   _G[name..'Cooldown']=CreateFrame('Cooldown')
   f.nativeScripts=true
   f.scripts.OnClick=function(button,key)
+   if template=='BankItemButtonGenericTemplate' then
+    C_Container.PickupContainerItem(button:GetParent():GetID(),button:GetID()); return
+   end
    if IsModifiedClick() then ContainerFrameItemButton_OnModifiedClick(button,key)
    else ContainerFrameItemButton_OnClick(button,key) end
   end
@@ -127,13 +142,23 @@ C_Container={
  end}
 C_Item={GetItemInfo=function(link) local id=tonumber(link:match('%d+')); return 'Item '..id,link,2,1,1,'Type','Subtype',20,'',1,1,id%4,0 end}
 assert(loadfile('Core.lua'))('PatchToolsBags',Bags)
+assert(loadfile('Pawn.lua'))('PatchToolsBags',Bags)
 assert(loadfile('Window.lua'))('PatchToolsBags',Bags)
+assert(loadfile('Bank.lua'))('PatchToolsBags',Bags)
 assert(loadfile('Options.lua'))('PatchToolsBags',Bags)
 local eventFrame=frames[#frames]
 -- Locate the event frame, since files loaded after it need not create frames.
 for _,f in ipairs(frames) do if f.events.PLAYER_LOGIN then eventFrame=f end end
+PatchToolsBagsDB={scale=.85,columns=12,x=100,y=700,backgroundTransparency=.3}
 eventFrame.scripts.OnEvent(eventFrame,'PLAYER_LOGIN')
+assert(Bags.windowDB==PatchToolsBagsCharacterDB and Bags.windowDB.scale==.85
+    and Bags.windowDB.columns==12 and Bags.windowDB.x==100 and Bags.windowDB.y==700)
 assert(PatchTools.builder)
+local debugCalls=0
+PatchTools.OpenDebugReport=function() debugCalls=debugCalls+1 end
+SlashCmdList.PATCHTOOLSBAGS(' debug '); assert(debugCalls==1)
+PatchTools.OpenDebugReport=nil; SlashCmdList.PATCHTOOLSBAGS('debug')
+
 PatchTools.builder(CreateFrame('Frame'))
 ToggleBackpack(); assert(originalToggles==1,'Other bag addon must retain access')
 SlashCmdList.PATCHTOOLSBAGS(''); assert(Bags.window:IsShown())
@@ -210,7 +235,7 @@ Bags.layout=nil; Bags:RefreshWindow()
 assert(target.point[4]==targetX and target.point[5]==targetY,'Layout must survive reconstruction from saved settings')
 
 SlashCmdList.PATCHTOOLSBAGS('reset'); drain()
-assert(Bags.db.scale==1 and Bags.db.columns==10)
+assert(Bags.windowDB.scale==1 and Bags.windowDB.columns==10)
 -- Comparison groups fit as a whole, even when neither side has enough space.
 function methods:SetPoint(...) self.point={...} end
 function methods:SetOwner(owner,anchor) self.owner=owner; self.anchor=anchor end
@@ -270,3 +295,202 @@ IsModifiedClick=function(kind) return kind=='DRESSUP' end
 Bags:UpdateItemCursor(itemButton); assert(cursorMode=='inspect')
 IsModifiedClick=function() return false end
 print('PASS: sale, buyback, merchant close, repair, inspect and pet-feed cursor modes.')
+
+PawnPlayerFullName='Test'; PawnCommon={ShowBagUpgradeAdvisor=true}
+PawnShouldItemLinkHaveUpgradeArrow=function() return true end
+itemButton.Count=CreateFrame('FontString')
+Bags:RefreshWindow()
+assert(itemButton.pawnUpgrade:IsShown(),'Pawn upgrades need a visible arrow')
+assert(itemButton.pawnUpgrade.point[1]=='BOTTOMRIGHT')
+assert(itemButton.Count.point[1]=='BOTTOMLEFT','stack count must not overlap upgrade arrow')
+PawnCommon.ShowBagUpgradeAdvisor=false
+Bags:RefreshWindow(); assert(itemButton.pawnUpgrade:IsShown(),'native Pawn arrows can be disabled independently')
+Bags.db.pawnUpgrades=false
+Bags:RefreshWindow(); assert(not itemButton.pawnUpgrade:IsShown())
+assert(itemButton.Count.point[1]=='BOTTOMRIGHT')
+local opened,page
+Bags.owner.OpenOptions=function() opened=true end
+Bags.owner.SelectOptionsPage=function(_,id) page=id end
+Bags.window.settings.scripts.OnClick(); assert(opened and page=='bags')
+function methods:SetBackdropColor(...) self.background={...} end
+Bags.db.backgroundTransparency=.6; Bags:ApplyBackgroundTransparency()
+assert(math.abs(Bags.window.background[4]-.388)<.000001)
+assert(Bags.window.alpha==nil,'transparency must affect background only')
+Bags:RefreshWindow()
+local emptyButton
+for _,button in pairs(Bags.buttons) do
+    local icon=button.icon or _G[button:GetName()..'IconTexture']
+    if button.hasItem then
+        if icon then assert(icon.vertex[4]==1,'occupied item icons stay opaque') end
+        assert(button.edge.vertex[4]==1,'occupied item borders stay opaque')
+    else
+        emptyButton=button
+        if icon then assert(math.abs(icon.vertex[4]-.4)<.000001,'empty fill follows background transparency') end
+        assert(math.abs(button.edge.vertex[4]-.4)<.000001,'empty border follows background transparency')
+    end
+end
+assert(emptyButton,'fixture includes empty slots')
+Bags.db.backgroundTransparency=0; Bags:RefreshWindow()
+assert(emptyButton.edge.vertex[4]==1,'restoring opacity restores empty slots too')
+print('PASS: bottom-right Pawn arrow, nonoverlapping count, direct settings and background-only transparency.')
+
+local account=PatchToolsBagsDB
+local first=Bags.windowDB
+first.scale=.7; first.columns=8; first.x=77
+account.backgroundTransparency=.4
+PatchToolsBagsCharacterDB=nil; eventFrame.scripts.OnEvent(eventFrame,'PLAYER_LOGIN')
+assert(Bags.windowDB~=first and Bags.windowDB.scale==.85 and Bags.windowDB.columns==12)
+Bags.windowDB.scale=1.2; Bags.windowDB.columns=16
+PatchToolsBagsCharacterDB=first; eventFrame.scripts.OnEvent(eventFrame,'PLAYER_LOGIN')
+assert(Bags.windowDB.scale==.7 and Bags.windowDB.columns==8 and Bags.windowDB.x==77)
+SlashCmdList.PATCHTOOLSBAGS('reset'); eventFrame.scripts.OnEvent(eventFrame,'PLAYER_LOGIN')
+assert(Bags.windowDB.scale==1 and Bags.windowDB.columns==10 and Bags.windowDB.x==nil)
+assert(Bags.db==account and account.scale==.85 and account.columns==12 and account.backgroundTransparency==.4)
+print('PASS: bag character migration, separate position/scale/columns, reset and global transparency.')
+
+-- Classic bank bags start at NUM_BAG_SLOTS + 1, even when the shared retail
+-- enums claim 6. Forever must use purchased bank tabs and keep reagent bag 5.
+local carriedIDs=Bags:BagIDs()
+Enum={BagIndex={ReagentBag=5,BankBag_1=6},BankType={Character=0}}
+NUM_BAG_SLOTS=4; NUM_BANKBAGSLOTS=6; BANK_CONTAINER=-1
+local ids=Bags:BankBagIDs()
+assert(#ids==7 and ids[1]==-1 and ids[2]==5 and ids[7]==10)
+inventory[-1]={{itemID=1,hyperlink='item:1',stackCount=12,quality=2}}
+inventory[5]={{itemID=1,hyperlink='item:1',stackCount=13,quality=2}}
+capacities[-1]=4; capacities[5]=2
+C_Container.GetContainerNumSlots=function(id) return capacities[id] or 0 end
+C_Container.GetContainerItemInfo=function(id,slot) return inventory[id] and inventory[id][slot] end
+BankFrame=CreateFrame('Frame'); BankFrame:SetAlpha(.7)
+BankSlotsFrame=CreateFrame('Frame',nil,BankFrame)
+local bankBagClicks,bankBagDrops,purchases=0,0,0
+local bankSlotsFull=false
+GetNumBankSlots=function() return 2,bankSlotsFull end
+GetBankSlotCost=function(count) assert(count==2); return 10000 end
+for index=1,6 do
+ local button=CreateFrame('Button',nil,BankSlotsFrame); BankSlotsFrame['Bag'..index]=button
+ button:SetID(index); button:SetPoint('TOPLEFT',BankSlotsFrame,'TOPLEFT',index*40,0)
+ button:SetScript('OnClick',function() bankBagClicks=bankBagClicks+1 end)
+ button:SetScript('OnReceiveDrag',function() bankBagDrops=bankBagDrops+1 end)
+ button.nativeScripts=true
+end
+BankFramePurchaseButton=CreateFrame('Button',nil,BankSlotsFrame)
+BankFramePurchaseButton:SetScript('OnClick',function() purchases=purchases+1 end)
+BankFramePurchaseButton.nativeScripts=true
+local nativeChild=CreateFrame('Button',nil,BankFrame); nativeChild:EnableMouse(false)
+local nativeActive=CreateFrame('Button',nil,BankFrame); nativeActive:EnableMouse(true)
+local closedNative={}
+CloseBag=function(id) closedNative[#closedNative+1]=id end
+local closes=0
+CloseBankFrame=function() closes=closes+1; Bags:HandleBankEvent('BANKFRAME_CLOSED') end
+local originalBagWindow=Bags.window
+Bags:HandleBankEvent('BANKFRAME_OPENED'); drain()
+local bank=Bags.bankView
+assert(bank and bank~=Bags and bank.window~=originalBagWindow and bank.window:IsShown())
+assert(bank.buttons['-1:1'] and bank.buttons['5:1'] and not bank.buttons['0:1'])
+local tooltipLocation
+BankButtonIDToInvSlotID=function(slot,isBag) assert(not isBag); return 39+slot end
+function GameTooltip:SetInventoryItem(unit,slot) tooltipLocation={'inventory',unit,slot} end
+function GameTooltip:SetBagItem(bag,slot) assert(bag~=-1,'base bank requires the inventory tooltip API'); tooltipLocation={'bag',bag,slot} end
+bank:Tooltip(bank.buttons['-1:1'])
+assert(tooltipLocation[1]=='inventory' and tooltipLocation[2]=='player' and tooltipLocation[3]==40)
+bank:Tooltip(bank.buttons['5:1'])
+assert(tooltipLocation[1]=='bag' and tooltipLocation[2]==5 and tooltipLocation[3]==1)
+assert(bank.windowDB~=Bags.windowDB and bank.layout~=Bags.layout)
+assert(bank:BankSlotRowHeight()==0,'bank bag controls start collapsed')
+assert(bank.window.bankBags:GetParent()==bank.window.header,'header button is above the draggable header')
+bank.window.bankBags.scripts.OnClick()
+assert(bank:BankSlotRowHeight()==42 and BankSlotsFrame.Bag1:GetParent()==bank.window)
+assert(BankSlotsFrame.Bag6:GetID()==6 and BankSlotsFrame.Bag6:IsMouseEnabled(),'locked bank slots remain reachable')
+BankSlotsFrame.Bag1.scripts.OnClick(); BankSlotsFrame.Bag2.scripts.OnReceiveDrag()
+BankFramePurchaseButton.scripts.OnClick()
+assert(bankBagClicks==1 and bankBagDrops==1 and purchases==1,'keep native bag and purchase handlers')
+local confirmations=0
+StaticPopup_Show=function(key) assert(key=='CONFIRM_BUY_BANK_SLOT'); confirmations=confirmations+1 end
+assert(not bank.bankSlotPurchaseOverlays[1]:IsShown() and bank.bankSlotPurchaseOverlays[3]:IsShown())
+bank.bankSlotPurchaseOverlays[3].scripts.OnClick()
+assert(confirmations==1 and BankFrame.nextSlotCost==10000 and purchases==1,'locked slot opens confirmation without buying')
+cursor={itemID=999}; local beforeDrop=mutations
+bank.bankSlotPurchaseOverlays[4].scripts.OnReceiveDrag()
+assert(confirmations==2 and cursor.itemID==999 and mutations==beforeDrop,'locked slot drop preserves cursor and inventory')
+cursor=nil
+combat=true; bank.bankSlotPurchaseOverlays[3].scripts.OnClick(); combat=false
+assert(confirmations==2,'no purchase prompt during combat')
+bank.window.bankBags.scripts.OnClick()
+assert(bank:BankSlotRowHeight()==0 and not BankSlotsFrame.Bag1:IsShown() and not bank.bankSlotPurchaseOverlays[3]:IsShown())
+bank.window.bankBags.scripts.OnClick()
+assert(BankFramePurchaseButton:GetParent()==bank.window and BankFramePurchaseButton:IsShown())
+bankSlotsFull=true; bank:RefreshWindow(); assert(not BankFramePurchaseButton:IsShown())
+bankSlotsFull=false; bank:RefreshWindow(); assert(BankFramePurchaseButton:IsShown())
+assert(BankFrame:GetAlpha()==0 and not BankFrame:IsMouseEnabled() and not nativeActive:IsMouseEnabled())
+assert(#closedNative==6 and closedNative[1]==5,'native bank bags suppressed without closing carried bags')
+local carriedSignature=Bags:Signature(inventory[0][1])
+bank:Sort(); drain()
+assert(inventory[-1][1].stackCount==20 and inventory[5][1].stackCount==5)
+assert(Bags:Signature(inventory[0][1])==carriedSignature,'bank consolidation never touches carried items')
+bank.buttons['-1:1'].scripts.OnClick(bank.buttons['-1:1'],'LeftButton')
+assert(cursor and cursor.itemID==1,'bank main slot keeps native click handling')
+C_Container.PickupContainerItem(-1,1); assert(not cursor)
+Bags.windowDB.x=88; bank.windowDB.x=22; bank.windowDB.scale=.75
+Bags:HandleBankEvent('BANKFRAME_CLOSED'); drain()
+assert(not bank.window:IsShown() and BankFrame:GetAlpha()==.7)
+assert(BankSlotsFrame.Bag1:GetParent()==BankSlotsFrame and BankSlotsFrame.Bag1:GetScale()==1)
+assert(BankFramePurchaseButton:GetParent()==BankSlotsFrame,'restore native controls when the visit ends')
+assert(BankFrame:IsMouseEnabled() and not nativeChild:IsMouseEnabled() and nativeActive:IsMouseEnabled())
+local beforeClosed=mutations; bank:Sort(); drain(); assert(mutations==beforeClosed)
+Bags:HandleBankEvent('BANKFRAME_OPENED'); drain()
+assert(bank.windowDB.x==22 and Bags.windowDB.x==88,'separate bank layout survives reopening')
+Bags:OpenNativeBank()
+assert(Bags.bankManagement and not bank.window:IsShown() and BankFrame:GetAlpha()==.7)
+assert(BankSlotsFrame.Bag1:GetParent()==BankSlotsFrame,'native setup gets its bag buttons back')
+SlashCmdList.PATCHTOOLSBAGS('bank')
+assert(not Bags.bankManagement and bank.window:IsShown() and BankFrame:GetAlpha()==0,'return from native bank setup')
+inventory[-1][1].stackCount=11; inventory[5][1].stackCount=12
+bank:Sort(); local afterStart=mutations
+Bags:HandleBankEvent('BANKFRAME_CLOSED'); drain()
+assert(mutations==afterStart and not bank.sorting,'bank closure cancels delayed consolidation')
+
+Bags.owner.isForever=true; Bags.owner.hasProfessionBag=true
+local tabs={6,8,10}
+C_Bank={CanViewBank=function(kind) assert(kind==0); return true end,
+ FetchPurchasedBankTabIDs=function(kind) assert(kind==0); return tabs end}
+assert(Bags:BagIDs()[6]==5,'profession bag remains carried')
+ids=Bags:BankBagIDs(); assert(#ids==3 and ids[1]==6 and ids[2]==8 and ids[3]==10)
+tabs={5,6}; assert(Bags:BankBagIDs()==nil,'reject a bank response that aliases the carried profession bag')
+tabs={6,8,10}; inventory[6]={{itemID=9,hyperlink='item:9',stackCount=1,quality=2}}; capacities[6]=2
+Bags:HandleBankEvent('BANKFRAME_OPENED'); drain()
+assert(bank.buttons['6:1']:IsShown() and not bank.buttons['5:1']:IsShown() and not bank.buttons['-1:1']:IsShown())
+assert(#Bags:Scan()==10,'carried inventory scan includes the profession bag and excludes bank tabs')
+Bags.db.replaceBank=false; Bags:UpdateBankReplacement()
+assert(not bank.window:IsShown() and BankFrame:GetAlpha()==.7,'bank replacement can be disabled live')
+Bags.db.replaceBank=true; Bags:UpdateBankReplacement(); assert(bank.window:IsShown())
+Bags:HandleBankEvent('BANKFRAME_CLOSED'); drain()
+C_Bank=nil; Bags:HandleBankEvent('BANKFRAME_OPENED'); drain()
+assert(not bank.window:IsShown() and BankFrame:GetAlpha()==.7,'unavailable Forever API keeps the native bank')
+Bags:HandleBankEvent('BANKFRAME_CLOSED')
+print('PASS: Era bank index mismatch, native handlers, separate bank sorting/layout, lifecycle cancellation, restoration and Forever tab/profession isolation.')
+
+-- Opening uses the same sort operation, once per opening, and never merges in combat.
+Bags.owner.isForever=false; Bags.owner.hasProfessionBag=false
+drain(); Bags.window:Hide()
+assert(Bags.db.autoSortOnOpen==false,'automatic sorting defaults off')
+local originalSort=Bags.Sort
+local sortCalls=0
+Bags.Sort=function(self) sortCalls=sortCalls+1; return originalSort(self) end
+Bags.window:Show(); drain(); assert(sortCalls==0)
+Bags.window:Hide(); Bags.db.autoSortOnOpen=true
+Bags.window:Show(); Bags.window:Hide(); drain()
+assert(sortCalls==0,'closing before the opening callback cancels automatic sorting')
+inventory[0]={{itemID=1,hyperlink='item:1',stackCount=7,quality=2}}
+inventory[1]={{itemID=1,hyperlink='item:1',stackCount=8,quality=2}}
+local beforeAuto=mutations
+combat=true; Bags.window:Show(); drain()
+assert(sortCalls==1 and mutations==beforeAuto,'automatic combat sorting only changes the display')
+Bags.window:Show(); Bags:RefreshWindow(); drain()
+assert(sortCalls==1,'refreshing or showing an already open window does not sort again')
+combat=false; Bags.window:Hide(); Bags.window:Show(); drain()
+assert(sortCalls==2 and mutations>beforeAuto,'outside combat opening also merges partial stacks')
+assert((inventory[0][1] and inventory[0][1].stackCount or 0)+(inventory[1][1] and inventory[1][1].stackCount or 0)==15)
+Bags.window:Hide(); cursor={itemID=123}; Bags.window:Show(); drain()
+assert(sortCalls==2 and cursor.itemID==123,'opening with an item on the cursor skips sorting')
+cursor=nil; Bags.db.autoSortOnOpen=false; Bags.Sort=originalSort
+print('PASS: optional opening sort, default off, once per opening, cancellation, combat display only and safe stack merging.')

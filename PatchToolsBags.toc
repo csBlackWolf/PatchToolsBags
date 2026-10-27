@@ -4,11 +4,15 @@
 ## Author: Patch & Zen
 ## X-License: MIT
 ## X-Curse-Project-ID: 1766097
-## Version: 0.1.1
+## Version: 0.1.2-alpha.4
 ## Dependencies: PatchTools
+## OptionalDeps: Pawn
 ## IconTexture: Interface\AddOns\PatchTools\Media\Icon
 ## SavedVariables: PatchToolsBagsDB
+## SavedVariablesPerCharacter: PatchToolsBagsCharacterDB
 Model.lua
 Core.lua
+Pawn.lua
 Window.lua
+Bank.lua
 Options.lua

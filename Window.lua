@@ -21,9 +21,22 @@ function Bags:Button(parent,text,width,callback)
 end
 function Bags:PlaceWindow()
     local f=self.window
-    f:SetScale(self.db.scale); f:ClearAllPoints()
-    if self.db.x and self.db.y then f:SetPoint("TOPLEFT",UIParent,"BOTTOMLEFT",self.db.x,self.db.y)
+    f:SetScale(self.windowDB.scale); f:ClearAllPoints()
+    if self.windowDB.x and self.windowDB.y then f:SetPoint("TOPLEFT",UIParent,"BOTTOMLEFT",self.windowDB.x,self.windowDB.y)
+    elseif self.isBank then f:SetPoint("TOPLEFT",UIParent,"TOPLEFT",24,-110)
     else f:SetPoint("CENTER",UIParent,"CENTER",130,0) end
+end
+function Bags:ApplyBackgroundTransparency()
+    if self.window then
+        local value=math.max(0,math.min(0.8,tonumber(self.db.backgroundTransparency) or 0))
+        self.window:SetBackdropColor(0.045,0.035,0.025,0.97*(1-value))
+    end
+end
+function Bags:OpenSettings()
+    if self.owner and self.owner.OpenOptions then
+        self.owner:OpenOptions()
+        if self.owner.SelectOptionsPage then self.owner:SelectOptionsPage("bags") end
+    end
 end
 -- Preserve the explicit anchor while Blizzard builds comparisons. Position the
 -- whole visible group afterwards, rather than triggering Classic's NONE branch.
@@ -45,7 +58,12 @@ function Bags:Tooltip(button)
     local tip=GameTooltip
     tip:SetOwner(button,"ANCHOR_PRESERVE")
     tip:ClearAllPoints(); tip:SetPoint("BOTTOMLEFT",button,"TOPLEFT",0,8)
-    tip:SetBagItem(button:GetParent():GetID(),button:GetID())
+    local bag,slot=button:GetParent():GetID(),button:GetID()
+    if self.isBank and not self.owner.isForever and bag==(BANK_CONTAINER or -1) then
+        -- Classic's base bank slots use inventory tooltips, just like the
+        -- native bank. SetBagItem is for carried bags and equipped bank bags.
+        tip:SetInventoryItem("player",BankButtonIDToInvSlotID(slot,false))
+    else tip:SetBagItem(bag,slot) end
     tip:Show()
     local compare=IsModifiedClick("COMPAREITEMS") or (GetCVarBool and GetCVarBool("alwaysCompareItems"))
     if compare then GameTooltip_ShowCompareItem(tip)
@@ -87,13 +105,15 @@ function Bags:ResetItemDecorations(button)
         local texture=button[getter] and button[getter](button)
         if texture then texture:SetAlpha(0) end
     end
-    for _,key in ipairs({"IconBorder","IconOverlay","BattlepayItemTexture","NewItemTexture","flash","ExtendedSlot","ExtendedOverlay","ExtendedOverlay2","BagStaticTop","BagStaticBottom"}) do
+    for _,key in ipairs({"IconBorder","IconOverlay","UpgradeIcon","BattlepayItemTexture","NewItemTexture","flash","ExtendedSlot","ExtendedOverlay","ExtendedOverlay2","BagStaticTop","BagStaticBottom"}) do
         if button[key] then button[key]:Hide() end
     end
 end
 function Bags:CreateItemButton(parent,bag,slot)
     -- The standard template supplies stack splitting, drag and item behavior.
-    local b=CreateFrame("Button", "PatchToolsBagsItem"..bag.."_"..slot,parent,"ContainerFrameItemButtonTemplate")
+    local template=self.isBank and bag==(BANK_CONTAINER or -1) and not self.owner.isForever
+        and "BankItemButtonGenericTemplate" or "ContainerFrameItemButtonTemplate"
+    local b=CreateFrame("Button", (self.isBank and "PatchToolsBankItem" or "PatchToolsBagsItem")..bag.."_"..slot,parent,template)
     b.Cooldown=_G[b:GetName().."Cooldown"]
     local normal=b:GetNormalTexture()
     if normal then normal:Hide() end
@@ -134,6 +154,9 @@ function Bags:CreateItemButton(parent,bag,slot)
         icon:ClearAllPoints(); icon:SetPoint("TOPLEFT",1,-1); icon:SetPoint("BOTTOMRIGHT",-1,1)
     end
     b.mark=b:CreateTexture(nil,"OVERLAY",nil,7); b.mark:SetSize(13,13); b.mark:SetPoint("TOPLEFT",4,-6)
+    b.pawnUpgrade=b:CreateTexture(nil,"OVERLAY",nil,7)
+    b.pawnUpgrade:SetAtlas("bags-greenarrow")
+    b.pawnUpgrade:SetSize(20,20); b.pawnUpgrade:SetPoint("BOTTOMRIGHT",-2,2); b.pawnUpgrade:Hide()
     b.markShadows={}
     for _,offset in ipairs({{-1,0},{1,0},{0,-1},{0,1},{-1,-1},{1,-1},{-1,1},{1,1}}) do
         local shadow=b:CreateTexture(nil,"OVERLAY",nil,6)
@@ -145,18 +168,22 @@ function Bags:CreateItemButton(parent,bag,slot)
 end
 function Bags:CreateWindow()
     if self.window then return end
-    local f=CreateFrame("Frame","PatchToolsBagsWindow",UIParent,"BackdropTemplate")
+    local windowName=self.isBank and "PatchToolsBankWindow" or "PatchToolsBagsWindow"
+    local f=CreateFrame("Frame",windowName,UIParent,"BackdropTemplate")
     self.window=f; f:Hide(); self:Backdrop(f)
     f:SetFrameStrata("HIGH"); f:SetMovable(true); f:SetClampedToScreen(true); f:EnableMouse(true)
     f:SetSize(424,400)
     local header=CreateFrame("Frame",nil,f); header:SetPoint("TOPLEFT",1,-1); header:SetPoint("TOPRIGHT",-1,-1); header:SetHeight(27)
+    f.header=header
     header:EnableMouse(true); header:RegisterForDrag("LeftButton")
     header:SetScript("OnDragStart",function() f:StartMoving() end)
     header:SetScript("OnDragStop",function()
-        f:StopMovingOrSizing(); self.db.x=f:GetLeft(); self.db.y=f:GetTop()
+        f:StopMovingOrSizing(); self.windowDB.x=f:GetLeft(); self.windowDB.y=f:GetTop()
     end)
-    local title=self:Text(header,"PatchToolsBags",14); title:SetPoint("LEFT",6,0)
-    local close=self:Button(header,"×",20,function() f:Hide() end); close:SetHeight(20); close:SetPoint("RIGHT",-5,0)
+    local title=self:Text(header,self.isBank and "PatchToolsBags · Bank" or "PatchToolsBags",14); title:SetPoint("LEFT",6,0)
+    local close=self:Button(header,"×",20,function()
+        if self.isBank and CloseBankFrame then CloseBankFrame() else f:Hide() end
+    end); close:SetHeight(20); close:SetPoint("RIGHT",-5,0)
     f.sort=self:Button(f,self:T("Sort","Sortieren"),86,function() self:Sort(); self:QueueRefresh() end)
     f.sort:SetHeight(20); f.sort:SetPoint("TOPRIGHT",-6,-32)
     local search=CreateFrame("EditBox",nil,f,"InputBoxTemplate")
@@ -179,6 +206,24 @@ function Bags:CreateWindow()
         GameTooltip:Show()
     end)
     help:SetScript("OnLeave",function() if GameTooltip:GetOwner()==help then GameTooltip:Hide() end end)
+    local settings=CreateFrame("Button",nil,header)
+    settings:SetSize(20,20)
+    settings:SetScript("OnClick",function() self:OpenSettings() end)
+    f.settings=settings
+    settings:SetHeight(20); settings:SetPoint("RIGHT",help,"LEFT",-4,0)
+    local cog=settings:CreateTexture(nil,"ARTWORK")
+    cog:SetTexture("Interface\\Buttons\\UI-OptionsButton")
+    cog:SetPoint("TOPLEFT",2,-2); cog:SetPoint("BOTTOMRIGHT",-2,2)
+    settings:SetScript("OnEnter",function()
+        cog:SetVertexColor(1,0.82,0)
+        GameTooltip:SetOwner(settings,"ANCHOR_TOP")
+        GameTooltip:SetText(self:T("Bag settings · size, columns and background transparency","Tascheneinstellungen · Größe, Spalten und Hintergrundtransparenz"),1,0.82,0,1,true)
+        GameTooltip:Show()
+    end)
+    settings:SetScript("OnLeave",function()
+        cog:SetVertexColor(1,1,1)
+        if GameTooltip:GetOwner()==settings then GameTooltip:Hide() end
+    end)
     local grip=CreateFrame("Button",nil,f)
     grip:SetSize(16,16); grip:SetPoint("BOTTOMRIGHT",-1,1)
     grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
@@ -186,20 +231,20 @@ function Bags:CreateWindow()
     grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
     local function StopScaling()
         grip:SetScript("OnUpdate",nil)
-        self.db.x=f:GetLeft(); self.db.y=f:GetTop()
+        self.windowDB.x=f:GetLeft(); self.windowDB.y=f:GetTop()
     end
     grip:SetScript("OnMouseDown",function(_,button)
         if button~="LeftButton" then return end
         local cursorX,cursorY=GetCursorPosition()
         local uiScale=UIParent:GetEffectiveScale()
-        local initial=self.db.scale
+        local initial=self.windowDB.scale
         local left,top=f:GetLeft()*initial,f:GetTop()*initial
         local span=f:GetWidth()+f:GetHeight()
         grip:SetScript("OnUpdate",function()
             if not IsMouseButtonDown("LeftButton") then StopScaling(); return end
             local x,y=GetCursorPosition()
             local value=math.max(0.65,math.min(1.3,initial+((x-cursorX)-(y-cursorY))/uiScale/span))
-            self.db.scale=value
+            self.windowDB.scale=value
             f:SetScale(value)
             f:ClearAllPoints(); f:SetPoint("TOPLEFT",UIParent,"BOTTOMLEFT",left/value,top/value)
         end)
@@ -207,19 +252,30 @@ function Bags:CreateWindow()
     grip:SetScript("OnMouseUp",StopScaling)
     grip:SetScript("OnHide",function() grip:SetScript("OnUpdate",nil) end)
     self.bagParents={}; self.buttons={}; self.query=""
-    f:SetScript("OnShow",function() self:RefreshWindow() end)
+    f:SetScript("OnShow",function()
+        self:RefreshWindow()
+        local opening={}; self.opening=opening
+        if self.db.autoSortOnOpen then
+            C_Timer.After(0,function()
+                if self.opening==opening and f:IsShown() and self.db.autoSortOnOpen and not GetCursorInfo() then self:Sort() end
+            end)
+        end
+    end)
     f:SetScript("OnHide",function()
+        self.opening=nil
         if self.sorting then self:StopSort() end
         search:ClearFocus()
         local owner=GameTooltip:GetOwner()
         if owner and owner.ptBags then GameTooltip:Hide(); ShoppingTooltip1:Hide(); ShoppingTooltip2:Hide() end
     end)
-    UISpecialFrames[#UISpecialFrames+1]="PatchToolsBagsWindow"
+    UISpecialFrames[#UISpecialFrames+1]=windowName
     self:PlaceWindow()
+    if self.isBank then self:CreateBankControls() end
 end
 function Bags:SectionIcon(section)
     local fallback="Interface\\Icons\\INV_Misc_Bag_08"
     local inventoryID=C_Container.ContainerIDToInventoryID or ContainerIDToInventoryID
+    if self.isBank and section.key=="general" then return "Interface\\Icons\\INV_Misc_Bag_10" end
     if section.key=="general" or not inventoryID then return fallback end
     local inventory=inventoryID(section.bag)
     local link=GetInventoryItemLink and GetInventoryItemLink("player",inventory)
@@ -233,9 +289,11 @@ function Bags:SectionIcon(section)
 end
 function Bags:RefreshWindow()
     local slots=self:Scan(); local f=self.window
+    self:ApplyBackgroundTransparency()
+    local emptyAlpha=1-math.max(0,math.min(0.8,tonumber(self.db.backgroundTransparency) or 0))
     local sections=self:Sections(slots)
-    local available=UIParent:GetHeight()/self.db.scale-160
-    local columns=math.max(self.db.columns,math.ceil(#slots/math.max(1,math.floor(available/37))))
+    local available=UIParent:GetHeight()/self.windowDB.scale-160
+    local columns=math.max(self.windowDB.columns,math.ceil(#slots/math.max(1,math.floor(available/37))))
     columns=math.min(20,columns)
     local function ContentHeight()
         local height=0
@@ -243,8 +301,9 @@ function Bags:RefreshWindow()
         return height
     end
     while ContentHeight()>available and columns<20 do columns=columns+1 end
-    f:SetSize(math.max(300,columns*37+30),ContentHeight()+80)
-    f:SetScale(self.db.scale)
+    local bankRow=self.isBank and self:BankSlotRowHeight() or 0
+    f:SetSize(math.max(self.isBank and 460 or 300,columns*37+30),ContentHeight()+80+bankRow)
+    f:SetScale(self.windowDB.scale)
     self.sectionBadges=self.sectionBadges or {}
     for _,badge in ipairs(self.sectionBadges) do badge:Hide() end
     local y=58
@@ -265,7 +324,7 @@ function Bags:RefreshWindow()
             self.sectionBadges[index]=badge
         end
         local getName=C_Container.GetBagName or GetBagName
-        badge.title=section.key=="general" and self:T("Combined bags","Zusammengefasste Taschen")
+        badge.title=section.key=="general" and (self.isBank and self:T("Bank storage","Bankfach") or self:T("Combined bags","Zusammengefasste Taschen"))
             or (getName and getName(section.bag)) or self:T("Specialty bag","Spezialtasche")
         local free,bagOrder,counts=0,{},{}
         for _,slot in ipairs(section.slots) do
@@ -289,6 +348,7 @@ function Bags:RefreshWindow()
         end
         y=y+math.max(40,math.ceil(#section.slots/columns)*37)+4
     end
+    local pawnEnabled=self:ConnectPawn()
     local used=0
     local active={}
     local marks={
@@ -317,16 +377,23 @@ function Bags:RefreshWindow()
         SetItemButtonTexture(b,s.info and s.info.iconFileID or "Interface\\Buttons\\WHITE8X8")
         local icon=b.icon or _G[b:GetName().."IconTexture"]
         if icon then
-            if s.info then icon:SetVertexColor(1,1,1)
-            else icon:SetVertexColor(0.065,0.055,0.04) end
+            if s.info then icon:SetVertexColor(1,1,1,1)
+            else icon:SetVertexColor(0.065,0.055,0.04,emptyAlpha) end
         end
         SetItemButtonCount(b,s.info and s.info.stackCount or 0)
+        local upgrade=pawnEnabled and s.info and self:PawnUpgrade(s.info.hyperlink) or false
+        b.pawnUpgrade:SetShown(upgrade)
+        if b.Count then
+            b.Count:ClearAllPoints()
+            if upgrade then b.Count:SetPoint("BOTTOMLEFT",2,2)
+            else b.Count:SetPoint("BOTTOMRIGHT",-2,2) end
+        end
         SetItemButtonDesaturated(b,s.info and s.info.isLocked or false)
         if s.info then used=used+1 end
         local q=s.info and s.info.quality
         local color=q and q>=2 and ITEM_QUALITY_COLORS[q]
         if s.mark=="quest" then b.edge:SetVertexColor(1,0.78,0.08,1)
-        else b.edge:SetVertexColor(color and color.r*0.9 or 0.25,color and color.g*0.9 or 0.22,color and color.b*0.9 or 0.15,1) end
+        else b.edge:SetVertexColor(color and color.r*0.9 or 0.25,color and color.g*0.9 or 0.22,color and color.b*0.9 or 0.15,s.info and 1 or emptyAlpha) end
         local mark=self.db.markers and s.mark
         -- Use the same coin for both sale lists and junk, with grey denoting junk.
         -- Quest and blocklist protection still win.
@@ -347,5 +414,6 @@ function Bags:RefreshWindow()
     for key,b in pairs(self.buttons) do if not active[key] and b:IsShown() then b:Hide() end end
     f.summary:SetText(string.format(self:T("%d / %d slots · %d free","%d / %d Plätze · %d frei"),used,#slots,#slots-used))
     f.money:SetText(GetCoinTextureString(GetMoney()))
+    if self.isBank then self:LayoutBankSlotControls() end
     f.sort.label:SetText(self.sorting and self:T("Sorting…","Sortiert…") or self:T("Sort","Sortieren"))
 end

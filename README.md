@@ -18,6 +18,7 @@ _A compact bag addon for PatchTools with fast item sorting for Classic Era and F
 
 | Command | What it does |
 | --- | --- |
+| `/ptbags debug` | Open a copyable diagnostic report with addon versions and load states. |
 | `/ptbags` | Open or close the bag window. |
 | `/ptbags reset` | Reset the window position, size and columns. |
 
@@ -49,6 +50,7 @@ _Ein kompaktes Taschen-Addon für PatchTools mit schneller Item-Sortierung für 
 
 | Befehl | Funktion |
 | --- | --- |
+| `/ptbags debug` | Kopierbaren Diagnosebericht mit Addon-Versionen und Ladestatus öffnen. |
 | `/ptbags` | Taschenfenster öffnen oder schließen. |
 | `/ptbags reset` | Position, Größe und Spaltenzahl zurücksetzen. |
 

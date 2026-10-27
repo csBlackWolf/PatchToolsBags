@@ -45,10 +45,15 @@ end
 -- items stay at their chosen display position until the next explicit sort.
 function Bags:Sections(slots,sort)
     if not self.layout then
+        if self.isBank then
+            self.windowDB.layout=self.windowDB.layout or {}
+            self.layout=self.windowDB.layout
+        else
         self.db.layouts=self.db.layouts or {}
         local character=UnitGUID and UnitGUID("player") or "current"
         self.db.layouts[character]=self.db.layouts[character] or {}
         self.layout=self.db.layouts[character]
+        end
     end
     local sections,byKey={},{}
     for _,slot in ipairs(slots) do

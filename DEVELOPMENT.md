@@ -7,14 +7,15 @@ PatchToolsBags is a separate optional PatchTools module. This guide explains the
 - `Core.lua` handles initialization, events and bag-window integration.
 - `Model.lua` classifies items, filters searches, plans display order and stack merging.
 - `Window.lua` builds and refreshes the bag window and its native item buttons.
+- `Pawn.lua` uses the optional public Pawn bag-arrow API, caches completed answers, retries budgeted results and invalidates on Pawn callbacks. Register with Pawn only while replacing the native bag window.
 - `Options.lua` registers settings with PatchTools extension API 1.
 - The TOC defines dependencies, load order and saved variables.
 
-Keep real bag/slot identity separate from display position. Visual sorting orders existing slot records; it must not turn a click on one icon into an action on another slot. Save display positions per character and retain manual placement until the next explicit Sort click. Group general bags together and keep specialty families separate.
+Keep real bag/slot identity separate from display position. Visual sorting orders existing slot records; it must not turn a click on one icon into an action on another slot. Save display positions per character and retain manual placement until the next Sort click or an opening with automatic sorting enabled. Group general bags together and keep specialty families separate.
 
 ## Inventory actions
 
-Only identical partial stacks move physically when Sort is clicked. Match the full item variant and bag family, preserve item counts, and stop for combat, a nonempty cursor, locks, missing cached data, unexpected inventory changes or an unconfirmed move. Closing the window stops subsequent movements. Do not queue merging after combat or clear a player's cursor.
+Only identical partial stacks move physically when Sort runs. Automatic sorting on opening is opt-in and uses the same operation; closing before its delayed callback cancels it. Match the full item variant and bag family, preserve item counts, and stop for combat, a nonempty cursor, locks, missing cached data, unexpected inventory changes or an unconfirmed move. Closing the window stops subsequent movements. Do not queue merging after combat or clear a player's cursor.
 
 Use Blizzard's native container-item handlers and secure button behavior for clicks, drag/drop, feeding, equipping, selling and stack splitting. Calling protected item-use functions through an ordinary custom click handler can fail even when the click itself came from the player. Test native cursor behavior at a vendor as well as the item action.
 
@@ -37,3 +38,15 @@ In-game checks still matter for protected actions, feeding, vendor cursors, comb
 Public releases use `main`; `alpha/prototype` preserves the initial prototype history. Keep technical explanations here and practical controls in [GUIDE.md](GUIDE.md). The README is the short player-facing presentation shared with CurseForge.
 
 See [RELEASING.md](RELEASING.md) for packaging and publication, [CHANGELOG.md](CHANGELOG.md) for changes and the [PatchTools extension guide](https://github.com/csBlackWolf/PatchTools/blob/main/EXTENSIONS.md) for settings integration. Keep commit messages and documentation direct: describe the change and its purpose without conversational notes or assumptions about who is doing the work.
+
+Window position, scale and column count use `PatchToolsBagsCharacterDB` (`SavedVariablesPerCharacter`). Import the old account geometry once for each character; later changes and resets stay local to that character. Background transparency and the other bag preferences remain account-wide in `PatchToolsBagsDB`. Display-slot ordering keeps its existing character-specific storage.
+
+## Bank preview
+
+`Bank.lua` creates a second view that shares window/model methods but no widget state with the carried inventory. Its geometry and slot layout live under the character-specific `bank` table; transparency and marker preferences are shared. Keep scans and stack-merging plans separate for each view. Stop pending merges on BANKFRAME_CLOSED, and leave the bank unavailable away from the banker.
+
+Era uses BANK_CONTAINER plus NUM_BAG_SLOTS + 1 through NUM_BAG_SLOTS + NUM_BANKBAGSLOTS; do not use the shared retail BankBag enum values. Forever uses C_Bank.FetchPurchasedBankTabIDs(Enum.BankType.Character), checking bank access and rejecting any ID also present in the carried inventory. The profession bag remains carried. An unavailable tab API leaves the native bank in place.
+
+Retain the native bank as logically shown for standard right-click deposit/withdraw handlers. Suppress its presentation and mouse targets while our view is active; restore their previous states on close, disable or the original-bank action in settings. Native bank bag frames are closed only for Era bank IDs. Keep native XML click/drag scripts, including BankItemButtonGenericTemplate for Era's main bank slots. The Bank bags header button toggles the Era slot row, initially collapsed. Unlocked slots retain their native click/drop handlers. Locked slots have a child button that opens CONFIRM_BUY_BANK_SLOT after checking bank access and cost; dropping a bag leaves the cursor untouched. Blizzard performs the confirmed purchase. The original-bank action lives only in settings; /ptbags bank returns to the compact view. Forever keeps native tab management separate.
+
+Reference: Blizzard UI sources for [Era bank handling](https://github.com/Gethe/wow-ui-source/blob/classic_era/Interface/AddOns/Blizzard_UIPanels_Game/Vanilla/BankFrame.lua) and [Forever bank tabs](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_UIPanels_Game/Camelot/BankFrame.lua). Automated fixtures cover the incorrect Era enum offset, Forever tab/profession isolation, native handlers, separate layouts, consolidation, closure cancellation and native fallback. Actual bank interactions and Forever gameplay still require in-game confirmation.
