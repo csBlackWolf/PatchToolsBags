@@ -55,21 +55,41 @@ function Bags:CreateBankView()
 end
 
 function Bags:CreateBankControls()
-    local button=self:Button(self.window,self:T("Bank setup","Bankverwaltung"),112,function()
-        if self.sorting then self:StopSort() end
-        Bags.bankManagement=true
-        Bags:SetNativeBankVisible(true)
-        self.window:Hide()
+    local button=self:Button(self.window.header,self:T("Bank bags","Banktaschen"),100,function()
+        if InCombatLockdown() then return end
+        self.bankSlotsExpanded=not self.bankSlotsExpanded
+        self:RefreshWindow()
     end)
-    self.window.bankSetup=button
+    self.window.bankBags=button
     button:SetHeight(20); button:SetPoint("RIGHT",self.window.settings,"LEFT",-4,0)
     button:SetScript("OnEnter",function()
         GameTooltip:SetOwner(button,"ANCHOR_TOP")
-        GameTooltip:SetText(self:T("Open Blizzard's bank setup to buy slots or change bank bags. /ptbags bank returns to this view.",
-            "Blizzards Bankverwaltung öffnen, um Plätze zu kaufen oder Banktaschen zu wechseln. /ptbags bank kehrt zu dieser Ansicht zurück."),1,.82,0,1,true)
+        GameTooltip:SetText(self:T("Show or hide bank bag slots. Click a locked slot to purchase it with confirmation.",
+            "Banktaschenplätze ein- oder ausblenden. Gesperrten Platz anklicken, um ihn mit Bestätigung zu kaufen."),1,.82,0,1,true)
         GameTooltip:Show()
     end)
     button:SetScript("OnLeave",function() GameTooltip:Hide() end)
+end
+
+function Bags:OpenNativeBank()
+    if not self.bankOpen then
+        self:Print("Visit a banker first.","Bitte zuerst einen Bankier besuchen."); return
+    end
+    if InCombatLockdown() then return end
+    if self.bankView and self.bankView.sorting then self.bankView:StopSort() end
+    self.bankManagement=true
+    self:SetNativeBankVisible(true)
+    if self.bankView then self.bankView.window:Hide() end
+end
+
+function Bags:ConfirmBankSlotPurchase(index)
+    if not Bags.bankOpen or Bags.bankManagement or self.owner.isForever or InCombatLockdown() then return end
+    local count,full=GetNumBankSlots()
+    if full or index<=count then return end
+    -- Use Blizzard's confirmation and purchase logic. A dragged bag stays on
+    -- the cursor; buying a slot never also equips or discards that bag.
+    BankFrame.nextSlotCost=GetBankSlotCost(count)
+    StaticPopup_Show("CONFIRM_BUY_BANK_SLOT")
 end
 
 function Bags:SetNativeBankVisible(visible)
@@ -104,10 +124,14 @@ end
 function Bags:BankSlotRowHeight()
     -- Forever purchases tabs rather than equipping Era bank bags. Its native
     -- management view remains available; never reinterpret profession-bag IDs.
-    return not self.owner.isForever and BankSlotsFrame and BankSlotsFrame.Bag1 and 42 or 0
+    return self.bankSlotsExpanded and not self.owner.isForever and BankSlotsFrame and BankSlotsFrame.Bag1 and 42 or 0
 end
 
 function Bags:RestoreBankSlotControls()
+    if self.bankView then
+        for _,overlay in pairs(self.bankView.bankSlotPurchaseOverlays or {}) do overlay:Hide() end
+        if self.bankView.window.bankSlotCost then self.bankView.window.bankSlotCost:Hide() end
+    end
     for _,entry in ipairs(self.nativeBankSlotControls or {}) do
         local button=entry.button
         button:SetParent(entry.parent); button:SetScale(entry.scale)
@@ -119,8 +143,15 @@ function Bags:RestoreBankSlotControls()
 end
 
 function Bags:LayoutBankSlotControls()
-    if not self.isBank or self:BankSlotRowHeight()==0 or not Bags.bankOpen or Bags.bankManagement then return end
+    if not self.isBank or not Bags.bankOpen or Bags.bankManagement then return end
     if InCombatLockdown and InCombatLockdown() then return end
+    self.window.bankBags:SetShown(not self.owner.isForever)
+    if self:BankSlotRowHeight()==0 then
+        for _,entry in ipairs(Bags.nativeBankSlotControls or {}) do entry.button:Hide() end
+        for _,overlay in pairs(self.bankSlotPurchaseOverlays or {}) do overlay:Hide() end
+        if self.window.bankSlotCost then self.window.bankSlotCost:Hide() end
+        return
+    end
     Bags.nativeBankSlotControls=Bags.nativeBankSlotControls or {}
     local function Adopt(button)
         if not button then return end
@@ -139,7 +170,29 @@ function Bags:LayoutBankSlotControls()
     end
     for index=1,(NUM_BANKBAGSLOTS or NUM_BANKBAG_SLOTS or 6) do
         local button=BankSlotsFrame["Bag"..index]
-        if button then Adopt(button); button:SetPoint("BOTTOMLEFT",self.window,"BOTTOMLEFT",(8+(index-1)*34)/.85,30/.85) end
+        if button then
+            Adopt(button); button:SetPoint("BOTTOMLEFT",self.window,"BOTTOMLEFT",(8+(index-1)*34)/.85,30/.85)
+            self.bankSlotPurchaseOverlays=self.bankSlotPurchaseOverlays or {}
+            local overlay=self.bankSlotPurchaseOverlays[index]
+            if not overlay then
+                overlay=CreateFrame("Button",nil,button)
+                overlay:SetAllPoints(); overlay:RegisterForClicks("LeftButtonUp","RightButtonUp")
+                local slotIndex=index
+                overlay:SetScript("OnClick",function() self:ConfirmBankSlotPurchase(slotIndex) end)
+                overlay:SetScript("OnReceiveDrag",function() self:ConfirmBankSlotPurchase(slotIndex) end)
+                overlay:SetScript("OnEnter",function()
+                    GameTooltip:SetOwner(overlay,"ANCHOR_TOP")
+                    GameTooltip:SetText(self:T("Unlock bank bag slot","Banktaschenplatz freischalten"),1,.82,0)
+                    local count=GetNumBankSlots()
+                    GameTooltip:AddLine(GetCoinTextureString(GetBankSlotCost(count)),1,1,1)
+                    GameTooltip:Show()
+                end)
+                overlay:SetScript("OnLeave",function() GameTooltip:Hide() end)
+                self.bankSlotPurchaseOverlays[index]=overlay
+            end
+            local count,full=GetNumBankSlots()
+            overlay:SetShown(not full and index>count)
+        end
     end
     local purchase=BankFramePurchaseButton
     if purchase then

@@ -174,6 +174,7 @@ function Bags:CreateWindow()
     f:SetFrameStrata("HIGH"); f:SetMovable(true); f:SetClampedToScreen(true); f:EnableMouse(true)
     f:SetSize(424,400)
     local header=CreateFrame("Frame",nil,f); header:SetPoint("TOPLEFT",1,-1); header:SetPoint("TOPRIGHT",-1,-1); header:SetHeight(27)
+    f.header=header
     header:EnableMouse(true); header:RegisterForDrag("LeftButton")
     header:SetScript("OnDragStart",function() f:StartMoving() end)
     header:SetScript("OnDragStop",function()
@@ -251,8 +252,17 @@ function Bags:CreateWindow()
     grip:SetScript("OnMouseUp",StopScaling)
     grip:SetScript("OnHide",function() grip:SetScript("OnUpdate",nil) end)
     self.bagParents={}; self.buttons={}; self.query=""
-    f:SetScript("OnShow",function() self:RefreshWindow() end)
+    f:SetScript("OnShow",function()
+        self:RefreshWindow()
+        local opening={}; self.opening=opening
+        if self.db.autoSortOnOpen then
+            C_Timer.After(0,function()
+                if self.opening==opening and f:IsShown() and self.db.autoSortOnOpen and not GetCursorInfo() then self:Sort() end
+            end)
+        end
+    end)
     f:SetScript("OnHide",function()
+        self.opening=nil
         if self.sorting then self:StopSort() end
         search:ClearFocus()
         local owner=GameTooltip:GetOwner()

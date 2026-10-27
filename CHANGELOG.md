@@ -1,3 +1,11 @@
+# PatchToolsBags 0.1.2-alpha.4 — 2026-10-27
+
+- Add `/ptbags debug` for a copyable diagnostic report (requires the matching PatchTools update).
+- Open and hide the bank bag slots with the Bank bags button in the title bar.
+- Open Blizzard's original bank view from the bag settings.
+- Click a locked bank bag slot, or drop a bag onto it, to open Blizzard's purchase confirmation. The bag stays on the cursor.
+- Add optional sorting when bags or the bank are opened, disabled by default. In combat only the display is sorted; stacks are merged outside combat.
+
 # PatchToolsBags 0.1.2-alpha.3 — 2026-10-27
 
 Public alpha test: bugs are possible. The stable release remains available.

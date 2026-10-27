@@ -157,7 +157,7 @@ events:SetScript("OnEvent",function(_,event)
             PatchToolsBagsCharacterDB={scale=Bags.db.scale,columns=Bags.db.columns,x=Bags.db.x,y=Bags.db.y}
         end
         Bags.windowDB=PatchToolsBagsCharacterDB
-        for k,v in pairs({replaceBags=true,replaceBank=true,markers=true,pawnUpgrades=true,backgroundTransparency=0}) do if Bags.db[k]==nil then Bags.db[k]=v end end
+        for k,v in pairs({replaceBags=true,replaceBank=true,markers=true,pawnUpgrades=true,autoSortOnOpen=false,backgroundTransparency=0}) do if Bags.db[k]==nil then Bags.db[k]=v end end
         Bags.windowDB.columns=math.max(6,math.min(16,tonumber(Bags.windowDB.columns) or 10))
         Bags.windowDB.scale=math.max(0.65,math.min(1.3,tonumber(Bags.windowDB.scale) or 1))
         Bags.db.backgroundTransparency=math.max(0,math.min(0.8,tonumber(Bags.db.backgroundTransparency) or 0))
@@ -166,7 +166,10 @@ events:SetScript("OnEvent",function(_,event)
         if Bags.InstallBankAccess then Bags:InstallBankAccess(events) end
         SLASH_PATCHTOOLSBAGS1="/ptbags"; SLASH_PATCHTOOLSBAGS2="/patchtoolsbags"
         SlashCmdList.PATCHTOOLSBAGS=function(msg)
-            if msg:lower():match("^%s*bank%s*$") then
+            if msg:lower():match("^%s*debug%s*$") then
+                if Bags.owner.OpenDebugReport then Bags.owner:OpenDebugReport()
+                else Bags:Print("Update PatchTools to use the diagnostic report.","Für den Diagnosebericht bitte PatchTools aktualisieren.") end
+            elseif msg:lower():match("^%s*bank%s*$") then
                 Bags:ShowBank()
             elseif msg:lower():match("^%s*reset%s*$") then
                 Bags.windowDB.x=nil; Bags.windowDB.y=nil; Bags.windowDB.scale=1; Bags.windowDB.columns=10

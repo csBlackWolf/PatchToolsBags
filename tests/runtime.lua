@@ -70,7 +70,7 @@ function methods:SetChecked(value) self.checked=value end
 function methods:GetChecked() return self.checked end
 function methods:SetValue(value) self.value=value; if self.scripts.OnValueChanged then self.scripts.OnValueChanged(self,value) end end
 function methods:Hide() self.hideCount=(self.hideCount or 0)+1; self.shown=false; if self.scripts.OnHide then self.scripts.OnHide(self) end end
-function methods:Show() self.shown=true; if self.scripts.OnShow then self.scripts.OnShow(self) end end
+function methods:Show() local wasShown=self.shown; self.shown=true; if not wasShown and self.scripts.OnShow then self.scripts.OnShow(self) end end
 function methods:SetShown(value) if value then self:Show() else self:Hide() end end
 function methods:IsShown() return self.shown end
 function methods:Enable() self.enabled=true end
@@ -154,6 +154,11 @@ eventFrame.scripts.OnEvent(eventFrame,'PLAYER_LOGIN')
 assert(Bags.windowDB==PatchToolsBagsCharacterDB and Bags.windowDB.scale==.85
     and Bags.windowDB.columns==12 and Bags.windowDB.x==100 and Bags.windowDB.y==700)
 assert(PatchTools.builder)
+local debugCalls=0
+PatchTools.OpenDebugReport=function() debugCalls=debugCalls+1 end
+SlashCmdList.PATCHTOOLSBAGS(' debug '); assert(debugCalls==1)
+PatchTools.OpenDebugReport=nil; SlashCmdList.PATCHTOOLSBAGS('debug')
+
 PatchTools.builder(CreateFrame('Frame'))
 ToggleBackpack(); assert(originalToggles==1,'Other bag addon must retain access')
 SlashCmdList.PATCHTOOLSBAGS(''); assert(Bags.window:IsShown())
@@ -391,11 +396,28 @@ assert(tooltipLocation[1]=='inventory' and tooltipLocation[2]=='player' and tool
 bank:Tooltip(bank.buttons['5:1'])
 assert(tooltipLocation[1]=='bag' and tooltipLocation[2]==5 and tooltipLocation[3]==1)
 assert(bank.windowDB~=Bags.windowDB and bank.layout~=Bags.layout)
+assert(bank:BankSlotRowHeight()==0,'bank bag controls start collapsed')
+assert(bank.window.bankBags:GetParent()==bank.window.header,'header button is above the draggable header')
+bank.window.bankBags.scripts.OnClick()
 assert(bank:BankSlotRowHeight()==42 and BankSlotsFrame.Bag1:GetParent()==bank.window)
 assert(BankSlotsFrame.Bag6:GetID()==6 and BankSlotsFrame.Bag6:IsMouseEnabled(),'locked bank slots remain reachable')
 BankSlotsFrame.Bag1.scripts.OnClick(); BankSlotsFrame.Bag2.scripts.OnReceiveDrag()
 BankFramePurchaseButton.scripts.OnClick()
 assert(bankBagClicks==1 and bankBagDrops==1 and purchases==1,'keep native bag and purchase handlers')
+local confirmations=0
+StaticPopup_Show=function(key) assert(key=='CONFIRM_BUY_BANK_SLOT'); confirmations=confirmations+1 end
+assert(not bank.bankSlotPurchaseOverlays[1]:IsShown() and bank.bankSlotPurchaseOverlays[3]:IsShown())
+bank.bankSlotPurchaseOverlays[3].scripts.OnClick()
+assert(confirmations==1 and BankFrame.nextSlotCost==10000 and purchases==1,'locked slot opens confirmation without buying')
+cursor={itemID=999}; local beforeDrop=mutations
+bank.bankSlotPurchaseOverlays[4].scripts.OnReceiveDrag()
+assert(confirmations==2 and cursor.itemID==999 and mutations==beforeDrop,'locked slot drop preserves cursor and inventory')
+cursor=nil
+combat=true; bank.bankSlotPurchaseOverlays[3].scripts.OnClick(); combat=false
+assert(confirmations==2,'no purchase prompt during combat')
+bank.window.bankBags.scripts.OnClick()
+assert(bank:BankSlotRowHeight()==0 and not BankSlotsFrame.Bag1:IsShown() and not bank.bankSlotPurchaseOverlays[3]:IsShown())
+bank.window.bankBags.scripts.OnClick()
 assert(BankFramePurchaseButton:GetParent()==bank.window and BankFramePurchaseButton:IsShown())
 bankSlotsFull=true; bank:RefreshWindow(); assert(not BankFramePurchaseButton:IsShown())
 bankSlotsFull=false; bank:RefreshWindow(); assert(BankFramePurchaseButton:IsShown())
@@ -417,7 +439,7 @@ assert(BankFrame:IsMouseEnabled() and not nativeChild:IsMouseEnabled() and nativ
 local beforeClosed=mutations; bank:Sort(); drain(); assert(mutations==beforeClosed)
 Bags:HandleBankEvent('BANKFRAME_OPENED'); drain()
 assert(bank.windowDB.x==22 and Bags.windowDB.x==88,'separate bank layout survives reopening')
-bank.window.bankSetup.scripts.OnClick()
+Bags:OpenNativeBank()
 assert(Bags.bankManagement and not bank.window:IsShown() and BankFrame:GetAlpha()==.7)
 assert(BankSlotsFrame.Bag1:GetParent()==BankSlotsFrame,'native setup gets its bag buttons back')
 SlashCmdList.PATCHTOOLSBAGS('bank')
@@ -446,3 +468,29 @@ C_Bank=nil; Bags:HandleBankEvent('BANKFRAME_OPENED'); drain()
 assert(not bank.window:IsShown() and BankFrame:GetAlpha()==.7,'unavailable Forever API keeps the native bank')
 Bags:HandleBankEvent('BANKFRAME_CLOSED')
 print('PASS: Era bank index mismatch, native handlers, separate bank sorting/layout, lifecycle cancellation, restoration and Forever tab/profession isolation.')
+
+-- Opening uses the same sort operation, once per opening, and never merges in combat.
+Bags.owner.isForever=false; Bags.owner.hasProfessionBag=false
+drain(); Bags.window:Hide()
+assert(Bags.db.autoSortOnOpen==false,'automatic sorting defaults off')
+local originalSort=Bags.Sort
+local sortCalls=0
+Bags.Sort=function(self) sortCalls=sortCalls+1; return originalSort(self) end
+Bags.window:Show(); drain(); assert(sortCalls==0)
+Bags.window:Hide(); Bags.db.autoSortOnOpen=true
+Bags.window:Show(); Bags.window:Hide(); drain()
+assert(sortCalls==0,'closing before the opening callback cancels automatic sorting')
+inventory[0]={{itemID=1,hyperlink='item:1',stackCount=7,quality=2}}
+inventory[1]={{itemID=1,hyperlink='item:1',stackCount=8,quality=2}}
+local beforeAuto=mutations
+combat=true; Bags.window:Show(); drain()
+assert(sortCalls==1 and mutations==beforeAuto,'automatic combat sorting only changes the display')
+Bags.window:Show(); Bags:RefreshWindow(); drain()
+assert(sortCalls==1,'refreshing or showing an already open window does not sort again')
+combat=false; Bags.window:Hide(); Bags.window:Show(); drain()
+assert(sortCalls==2 and mutations>beforeAuto,'outside combat opening also merges partial stacks')
+assert((inventory[0][1] and inventory[0][1].stackCount or 0)+(inventory[1][1] and inventory[1][1].stackCount or 0)==15)
+Bags.window:Hide(); cursor={itemID=123}; Bags.window:Show(); drain()
+assert(sortCalls==2 and cursor.itemID==123,'opening with an item on the cursor skips sorting')
+cursor=nil; Bags.db.autoSortOnOpen=false; Bags.Sort=originalSort
+print('PASS: optional opening sort, default off, once per opening, cancellation, combat display only and safe stack merging.')
