@@ -4,32 +4,36 @@ _A compact bag addon for PatchTools with fast item sorting for Classic Era and F
 
 ## Features
 
+- All bags in one window, with separate sections for specialty bags
+- A matching bank window
 - Fast sorting at the click of a button
 - Merge partial stacks to free up bag space
+- Optional sorting when opening your bags or bank
 - Search by name, item ID or item type
-- Colored borders matching item rarity, with gold borders for quest items
-- Visual markers for quest items, junk and items marked for sale
-- All bags in one window, with separate sections for specialty bags
-- A matching bank window and optional sorting when opened
-- Pawn upgrade arrows and adjustable background transparency
-- A compact, movable and scalable window in the PatchTools style
+- Colored rarity borders and gold borders for quest items
+- Visual markers for quest items, protected items, junk and items marked for sale
+- Pawn upgrade arrows, including future upgrades above your current level
+- A movable, scalable window with adjustable background transparency
+- Remember window position and size for each character
 
-**[PatchTools](https://www.curseforge.com/wow/addons/patchtools) is required and must be enabled!**
+Open the settings directly from the bag window using the cogwheel.
+
+**[PatchTools](https://www.curseforge.com/wow/addons/patchtools) is required and must be enabled!** [Pawn](https://www.curseforge.com/wow/addons/pawn) is optional and enables upgrade arrows.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `/ptbags debug` | Open a copyable diagnostic report with addon versions and load states. |
 | `/ptbags` | Open or close the bag window. |
 | `/ptbags bank` | Return to the compact bank view while visiting the banker. |
-| `/ptbags reset` | Reset the window position, size and columns. |
+| `/ptbags reset` | Reset bag and bank window positions, sizes and columns. |
+| `/ptbags debug` | Open the shared diagnostic report with addon versions and load states. |
 
 You can also use `/patchtoolsbags` instead of `/ptbags`.
 
-[Download on CurseForge](https://www.curseforge.com/wow/addons/patchtoolsbags) · [Source code](https://github.com/csBlackWolf/PatchToolsBags) · [Bug reports and ideas](https://github.com/csBlackWolf/PatchTools/issues/new/choose)
+[Source code](https://github.com/csBlackWolf/PatchToolsBags) · [Report bugs and suggest ideas](https://github.com/csBlackWolf/PatchTools/issues/new/choose)
 
-[Detailed user guide](GUIDE.md) · [Developer guide](DEVELOPMENT.md)
+[User guide](https://github.com/csBlackWolf/PatchToolsBags/blob/main/GUIDE.md) · [Developer guide](https://github.com/csBlackWolf/PatchToolsBags/blob/main/DEVELOPMENT.md)
 
 ---
 
@@ -39,29 +43,33 @@ _Ein kompaktes Taschen-Addon für PatchTools mit schneller Item-Sortierung für 
 
 ## Funktionen
 
+- Alle Taschen in einem Fenster, mit getrennten Bereichen für Spezialtaschen
+- Ein dazu passendes Bankfenster
 - Schnelle Sortierung per Klick
 - Angebrochene Stapel zusammenführen und Taschenplätze freimachen
+- Optionale Sortierung beim Öffnen von Taschen oder Bank
 - Suchfunktion für Namen, Item-IDs oder Itemtypen
-- Farbige Rahmen passend zur Seltenheit der Items und goldene Rahmen für Questitems
-- Symbole für Questitems, Schrott und zum Verkauf vorgesehene Items
-- Alle Taschen in einem Fenster, mit getrennten Bereichen für Spezialtaschen
-- Passendes Bankfenster und optionale Sortierung beim Öffnen
-- Pawn-Verbesserungspfeile und einstellbare Hintergrundtransparenz
-- Ein kompaktes, verschiebbares und skalierbares Fenster im PatchTools-Stil
+- Farbige Seltenheitsrahmen und goldene Rahmen für Questitems
+- Symbole für Questitems, geschützte Items, Schrott und zum Verkauf vorgesehene Items
+- Pawn-Verbesserungspfeile, auch für zukünftige Upgrades über deiner aktuellen Stufe
+- Verschiebbares und skalierbares Fenster mit einstellbarer Hintergrundtransparenz
+- Position und Größe für jeden Charakter merken
 
-**[PatchTools](https://www.curseforge.com/wow/addons/patchtools) wird benötigt und muss aktiviert sein!**
+Über das Zahnrad im Taschenfenster erreichst du die Einstellungen direkt.
+
+**[PatchTools](https://www.curseforge.com/wow/addons/patchtools) wird benötigt und muss aktiviert sein!** [Pawn](https://www.curseforge.com/wow/addons/pawn) ist optional und ermöglicht die Verbesserungspfeile.
 
 ## Befehle
 
 | Befehl | Funktion |
 | --- | --- |
-| `/ptbags debug` | Kopierbaren Diagnosebericht mit Addon-Versionen und Ladestatus öffnen. |
 | `/ptbags` | Taschenfenster öffnen oder schließen. |
 | `/ptbags bank` | Beim Bankier zur kompakten Bankansicht zurückkehren. |
-| `/ptbags reset` | Position, Größe und Spaltenzahl zurücksetzen. |
+| `/ptbags reset` | Position, Größe und Spaltenzahl von Taschen- und Bankfenster zurücksetzen. |
+| `/ptbags debug` | Den gemeinsamen Diagnosebericht mit Addon-Versionen und Ladestatus öffnen. |
 
 Statt `/ptbags` funktioniert auch `/patchtoolsbags`.
 
-[Download auf CurseForge](https://www.curseforge.com/wow/addons/patchtoolsbags) · [Quellcode](https://github.com/csBlackWolf/PatchToolsBags) · [Fehler und Ideen melden](https://github.com/csBlackWolf/PatchTools/issues/new/choose)
+[Quellcode](https://github.com/csBlackWolf/PatchToolsBags) · [Fehler und Ideen melden](https://github.com/csBlackWolf/PatchTools/issues/new/choose)
 
-[Ausführliche Bedienungsanleitung](GUIDE.md) · [Entwicklerinfos](DEVELOPMENT.md)
+[Bedienungsanleitung](https://github.com/csBlackWolf/PatchToolsBags/blob/main/GUIDE.md) · [Entwicklerinfos](https://github.com/csBlackWolf/PatchToolsBags/blob/main/DEVELOPMENT.md)
