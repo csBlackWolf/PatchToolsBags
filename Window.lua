@@ -286,7 +286,8 @@ function Bags:RefreshWindow()
         return height
     end
     while ContentHeight()>available and columns<20 do columns=columns+1 end
-    f:SetSize(math.max(self.isBank and 460 or 300,columns*37+30),ContentHeight()+80)
+    local bankRow=self.isBank and self:BankSlotRowHeight() or 0
+    f:SetSize(math.max(self.isBank and 460 or 300,columns*37+30),ContentHeight()+80+bankRow)
     f:SetScale(self.windowDB.scale)
     self.sectionBadges=self.sectionBadges or {}
     for _,badge in ipairs(self.sectionBadges) do badge:Hide() end
@@ -398,5 +399,6 @@ function Bags:RefreshWindow()
     for key,b in pairs(self.buttons) do if not active[key] and b:IsShown() then b:Hide() end end
     f.summary:SetText(string.format(self:T("%d / %d slots · %d free","%d / %d Plätze · %d frei"),used,#slots,#slots-used))
     f.money:SetText(GetCoinTextureString(GetMoney()))
+    if self.isBank then self:LayoutBankSlotControls() end
     f.sort.label:SetText(self.sorting and self:T("Sorting…","Sortiert…") or self:T("Sort","Sortieren"))
 end

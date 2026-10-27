@@ -1,3 +1,11 @@
+# PatchToolsBags 0.1.2-alpha.3-local.1 — local bank controls test — 2026-10-27
+
+- Show the actual equipped and locked Classic Era bank-bag slots inside the compact bank window.
+- Keep native bag pickup/drop handlers and the purchase button with its normal confirmation; show the next slot price.
+- Restore the original controls when leaving the bank or opening Bank setup. Forever retains its separate native tab management.
+
+Automated interaction/restoration tests passed. In-game bag replacement and slot purchase confirmation are pending. Local test only.
+
 # PatchToolsBags 0.1.2-alpha.2 — 2026-10-27
 
 Public alpha test: bugs are possible. Stable 0.1.1 remains available.

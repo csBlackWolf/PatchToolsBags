@@ -40,6 +40,10 @@ function methods:GetText() return self.text or '' end
 function methods:GetFont() return 'font',12,'' end
 function methods:GetName() return self.name end
 function methods:GetParent() return self.parent end
+function methods:SetParent(parent) self.parent=parent end
+function methods:GetScale() return self.scale or 1 end
+function methods:GetNumPoints() return self.point and 1 or 0 end
+function methods:GetPoint() return table.unpack(self.point) end
 function methods:SetDesaturated(value) self.desaturated=value end
 function methods:SetAlpha(value) self.alpha=value end
 function methods:SetVertexColor(...) self.vertex={...} end
@@ -352,6 +356,21 @@ capacities[-1]=4; capacities[5]=2
 C_Container.GetContainerNumSlots=function(id) return capacities[id] or 0 end
 C_Container.GetContainerItemInfo=function(id,slot) return inventory[id] and inventory[id][slot] end
 BankFrame=CreateFrame('Frame'); BankFrame:SetAlpha(.7)
+BankSlotsFrame=CreateFrame('Frame',nil,BankFrame)
+local bankBagClicks,bankBagDrops,purchases=0,0,0
+local bankSlotsFull=false
+GetNumBankSlots=function() return 2,bankSlotsFull end
+GetBankSlotCost=function(count) assert(count==2); return 10000 end
+for index=1,6 do
+ local button=CreateFrame('Button',nil,BankSlotsFrame); BankSlotsFrame['Bag'..index]=button
+ button:SetID(index); button:SetPoint('TOPLEFT',BankSlotsFrame,'TOPLEFT',index*40,0)
+ button:SetScript('OnClick',function() bankBagClicks=bankBagClicks+1 end)
+ button:SetScript('OnReceiveDrag',function() bankBagDrops=bankBagDrops+1 end)
+ button.nativeScripts=true
+end
+BankFramePurchaseButton=CreateFrame('Button',nil,BankSlotsFrame)
+BankFramePurchaseButton:SetScript('OnClick',function() purchases=purchases+1 end)
+BankFramePurchaseButton.nativeScripts=true
 local nativeChild=CreateFrame('Button',nil,BankFrame); nativeChild:EnableMouse(false)
 local nativeActive=CreateFrame('Button',nil,BankFrame); nativeActive:EnableMouse(true)
 local closedNative={}
@@ -364,6 +383,14 @@ local bank=Bags.bankView
 assert(bank and bank~=Bags and bank.window~=originalBagWindow and bank.window:IsShown())
 assert(bank.buttons['-1:1'] and bank.buttons['5:1'] and not bank.buttons['0:1'])
 assert(bank.windowDB~=Bags.windowDB and bank.layout~=Bags.layout)
+assert(bank:BankSlotRowHeight()==42 and BankSlotsFrame.Bag1:GetParent()==bank.window)
+assert(BankSlotsFrame.Bag6:GetID()==6 and BankSlotsFrame.Bag6:IsMouseEnabled(),'locked bank slots remain reachable')
+BankSlotsFrame.Bag1.scripts.OnClick(); BankSlotsFrame.Bag2.scripts.OnReceiveDrag()
+BankFramePurchaseButton.scripts.OnClick()
+assert(bankBagClicks==1 and bankBagDrops==1 and purchases==1,'keep native bag and purchase handlers')
+assert(BankFramePurchaseButton:GetParent()==bank.window and BankFramePurchaseButton:IsShown())
+bankSlotsFull=true; bank:RefreshWindow(); assert(not BankFramePurchaseButton:IsShown())
+bankSlotsFull=false; bank:RefreshWindow(); assert(BankFramePurchaseButton:IsShown())
 assert(BankFrame:GetAlpha()==0 and not BankFrame:IsMouseEnabled() and not nativeActive:IsMouseEnabled())
 assert(#closedNative==6 and closedNative[1]==5,'native bank bags suppressed without closing carried bags')
 local carriedSignature=Bags:Signature(inventory[0][1])
@@ -376,12 +403,15 @@ C_Container.PickupContainerItem(-1,1); assert(not cursor)
 Bags.windowDB.x=88; bank.windowDB.x=22; bank.windowDB.scale=.75
 Bags:HandleBankEvent('BANKFRAME_CLOSED'); drain()
 assert(not bank.window:IsShown() and BankFrame:GetAlpha()==.7)
+assert(BankSlotsFrame.Bag1:GetParent()==BankSlotsFrame and BankSlotsFrame.Bag1:GetScale()==1)
+assert(BankFramePurchaseButton:GetParent()==BankSlotsFrame,'restore native controls when the visit ends')
 assert(BankFrame:IsMouseEnabled() and not nativeChild:IsMouseEnabled() and nativeActive:IsMouseEnabled())
 local beforeClosed=mutations; bank:Sort(); drain(); assert(mutations==beforeClosed)
 Bags:HandleBankEvent('BANKFRAME_OPENED'); drain()
 assert(bank.windowDB.x==22 and Bags.windowDB.x==88,'separate bank layout survives reopening')
 bank.window.bankSetup.scripts.OnClick()
 assert(Bags.bankManagement and not bank.window:IsShown() and BankFrame:GetAlpha()==.7)
+assert(BankSlotsFrame.Bag1:GetParent()==BankSlotsFrame,'native setup gets its bag buttons back')
 SlashCmdList.PATCHTOOLSBAGS('bank')
 assert(not Bags.bankManagement and bank.window:IsShown() and BankFrame:GetAlpha()==0,'return from native bank setup')
 inventory[-1][1].stackCount=11; inventory[5][1].stackCount=12

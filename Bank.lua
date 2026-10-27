@@ -76,6 +76,7 @@ function Bags:SetNativeBankVisible(visible)
     local frame=BankFrame
     if not frame then return end
     if visible then
+        self:RestoreBankSlotControls()
         local saved=self.nativeBankAppearance
         if not saved then return end
         frame:SetAlpha(saved.alpha)
@@ -97,6 +98,59 @@ function Bags:SetNativeBankVisible(visible)
         -- Keep BankFrame logically open: the native item handlers depend on it
         -- for right-click deposits and withdrawals. Only hide its presentation.
         frame:SetAlpha(0)
+    end
+end
+
+function Bags:BankSlotRowHeight()
+    -- Forever purchases tabs rather than equipping Era bank bags. Its native
+    -- management view remains available; never reinterpret profession-bag IDs.
+    return not self.owner.isForever and BankSlotsFrame and BankSlotsFrame.Bag1 and 42 or 0
+end
+
+function Bags:RestoreBankSlotControls()
+    for _,entry in ipairs(self.nativeBankSlotControls or {}) do
+        local button=entry.button
+        button:SetParent(entry.parent); button:SetScale(entry.scale)
+        button:ClearAllPoints()
+        for _,point in ipairs(entry.points) do button:SetPoint(unpack(point)) end
+        button:SetShown(entry.shown)
+    end
+    self.nativeBankSlotControls=nil
+end
+
+function Bags:LayoutBankSlotControls()
+    if not self.isBank or self:BankSlotRowHeight()==0 or not Bags.bankOpen or Bags.bankManagement then return end
+    if InCombatLockdown and InCombatLockdown() then return end
+    Bags.nativeBankSlotControls=Bags.nativeBankSlotControls or {}
+    local function Adopt(button)
+        if not button then return end
+        local known=false
+        for _,entry in ipairs(Bags.nativeBankSlotControls) do if entry.button==button then known=true; break end end
+        if not known then
+            local points={}
+            for i=1,button:GetNumPoints() do points[i]={button:GetPoint(i)} end
+            Bags.nativeBankSlotControls[#Bags.nativeBankSlotControls+1]={button=button,parent=button:GetParent(),
+                scale=button:GetScale(),points=points,shown=button:IsShown()}
+        end
+        -- These are the real Blizzard controls, including their original item
+        -- pickup/drop handlers and purchase confirmation. Only presentation moves.
+        button:SetParent(self.window); button:SetScale(.85); button:EnableMouse(true)
+        button:ClearAllPoints(); button:Show()
+    end
+    for index=1,(NUM_BANKBAGSLOTS or NUM_BANKBAG_SLOTS or 6) do
+        local button=BankSlotsFrame["Bag"..index]
+        if button then Adopt(button); button:SetPoint("BOTTOMLEFT",self.window,"BOTTOMLEFT",(8+(index-1)*34)/.85,30/.85) end
+    end
+    local purchase=BankFramePurchaseButton
+    if purchase then
+        Adopt(purchase); purchase:SetPoint("BOTTOMRIGHT",self.window,"BOTTOMRIGHT",-8/.85,30/.85)
+        local count,full=GetNumBankSlots()
+        purchase:SetShown(not full)
+        if not self.window.bankSlotCost then self.window.bankSlotCost=self:Text(self.window,"",11) end
+        local cost=self.window.bankSlotCost
+        cost:ClearAllPoints(); cost:SetPoint("RIGHT",purchase,"LEFT",-6,0)
+        cost:SetText(full and "" or GetCoinTextureString(GetBankSlotCost(count)))
+        cost:SetShown(not full)
     end
 end
 
