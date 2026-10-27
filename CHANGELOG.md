@@ -1,12 +1,15 @@
-# PatchToolsBags 0.1.2-alpha.2-local.1 — local bank preview — 2026-10-26
+# PatchToolsBags 0.1.2-alpha.2 — 2026-10-27
 
-- Add a separate compact bank window with search, sorting and specialty-bag sections while visiting the banker.
-- Store bank position, scale and item arrangement separately for each character; share background transparency with bags.
-- Keep the native bank controls available through Bank setup and return with `/ptbags bank`.
-- Handle Era bank bags and Forever purchased character-bank tabs separately; never treat the carried profession bag as bank storage.
-- Add a bank-view toggle. Stop bank stack merging when the visit ends.
+Public alpha test: bugs are possible. Stable 0.1.1 remains available.
 
-Automated bank and existing bag tests passed. Bank interactions and appearance still need in-game testing. This preview is local only.
+- Use a compact bank window in the PatchTools style, with search, sorting and separate specialty-bag sections.
+- Remember bank position, size and item arrangement separately for each character. Background transparency follows your bag setting.
+- Access the original bank controls through Bank setup, then return with `/ptbags bank`.
+- Include separate bank support for Classic Era and Forever, keeping carried profession bags separate from bank storage.
+
+Please test depositing, withdrawing, sorting and switching between the compact bank and Bank setup. Automated bank and bag checks passed; bank appearance and interactions still need in-game confirmation, especially on Forever.
+
+PatchTools is required; the recommended companion is PatchTools 0.9.0-alpha.14. Report problems in the [PatchTools issue tracker](https://github.com/csBlackWolf/PatchTools/issues).
 
 # PatchToolsBags 0.1.2-alpha.1 — 2026-10-26
 
