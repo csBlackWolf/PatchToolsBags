@@ -58,7 +58,12 @@ function Bags:Tooltip(button)
     local tip=GameTooltip
     tip:SetOwner(button,"ANCHOR_PRESERVE")
     tip:ClearAllPoints(); tip:SetPoint("BOTTOMLEFT",button,"TOPLEFT",0,8)
-    tip:SetBagItem(button:GetParent():GetID(),button:GetID())
+    local bag,slot=button:GetParent():GetID(),button:GetID()
+    if self.isBank and not self.owner.isForever and bag==(BANK_CONTAINER or -1) then
+        -- Classic's base bank slots use inventory tooltips, just like the
+        -- native bank. SetBagItem is for carried bags and equipped bank bags.
+        tip:SetInventoryItem("player",BankButtonIDToInvSlotID(slot,false))
+    else tip:SetBagItem(bag,slot) end
     tip:Show()
     local compare=IsModifiedClick("COMPAREITEMS") or (GetCVarBool and GetCVarBool("alwaysCompareItems"))
     if compare then GameTooltip_ShowCompareItem(tip)

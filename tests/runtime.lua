@@ -382,6 +382,14 @@ Bags:HandleBankEvent('BANKFRAME_OPENED'); drain()
 local bank=Bags.bankView
 assert(bank and bank~=Bags and bank.window~=originalBagWindow and bank.window:IsShown())
 assert(bank.buttons['-1:1'] and bank.buttons['5:1'] and not bank.buttons['0:1'])
+local tooltipLocation
+BankButtonIDToInvSlotID=function(slot,isBag) assert(not isBag); return 39+slot end
+function GameTooltip:SetInventoryItem(unit,slot) tooltipLocation={'inventory',unit,slot} end
+function GameTooltip:SetBagItem(bag,slot) assert(bag~=-1,'base bank requires the inventory tooltip API'); tooltipLocation={'bag',bag,slot} end
+bank:Tooltip(bank.buttons['-1:1'])
+assert(tooltipLocation[1]=='inventory' and tooltipLocation[2]=='player' and tooltipLocation[3]==40)
+bank:Tooltip(bank.buttons['5:1'])
+assert(tooltipLocation[1]=='bag' and tooltipLocation[2]==5 and tooltipLocation[3]==1)
 assert(bank.windowDB~=Bags.windowDB and bank.layout~=Bags.layout)
 assert(bank:BankSlotRowHeight()==42 and BankSlotsFrame.Bag1:GetParent()==bank.window)
 assert(BankSlotsFrame.Bag6:GetID()==6 and BankSlotsFrame.Bag6:IsMouseEnabled(),'locked bank slots remain reachable')

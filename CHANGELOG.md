@@ -1,3 +1,8 @@
+# PatchToolsBags 0.1.2-alpha.3-local.2 — local bank tooltip fix — 2026-10-27
+
+- Use the native inventory tooltip API for Classic Era base-bank items, while additional bank bags keep their container tooltips.
+- Automated checks cover both paths. In-game tooltip confirmation is pending. Local test only.
+
 # PatchToolsBags 0.1.2-alpha.3-local.1 — local bank controls test — 2026-10-27
 
 - Show the actual equipped and locked Classic Era bank-bag slots inside the compact bank window.
