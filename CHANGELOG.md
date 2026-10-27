@@ -1,15 +1,14 @@
-# PatchToolsBags 0.1.2-alpha.3-local.2 — local bank tooltip fix — 2026-10-27
+# PatchToolsBags 0.1.2-alpha.3 — 2026-10-27
 
-- Use the native inventory tooltip API for Classic Era base-bank items, while additional bank bags keep their container tooltips.
-- Automated checks cover both paths. In-game tooltip confirmation is pending. Local test only.
+Public alpha test: bugs are possible. The stable release remains available.
 
-# PatchToolsBags 0.1.2-alpha.3-local.1 — local bank controls test — 2026-10-27
+- Show equipped and locked bank-bag slots directly in the Classic Era bank window.
+- Add the native bank-slot purchase button and price, keeping Blizzard's purchase confirmation.
+- Fix tooltips for items in the main Classic Era bank storage.
 
-- Show the actual equipped and locked Classic Era bank-bag slots inside the compact bank window.
-- Keep native bag pickup/drop handlers and the purchase button with its normal confirmation; show the next slot price.
-- Restore the original controls when leaving the bank or opening Bank setup. Forever retains its separate native tab management.
+Please test bank-item tooltips, replacing bank bags and unlocking additional slots. Forever keeps its separate native bank-tab management. Automated interaction and restoration checks passed; in-game confirmation is pending.
 
-Automated interaction/restoration tests passed. In-game bag replacement and slot purchase confirmation are pending. Local test only.
+Recommended companion: PatchTools 0.9.0-alpha.14. Report problems in the [PatchTools issue tracker](https://github.com/csBlackWolf/PatchTools/issues).
 
 # PatchToolsBags 0.1.2-alpha.2 — 2026-10-27
 
