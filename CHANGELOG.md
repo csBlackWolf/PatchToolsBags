@@ -1,3 +1,13 @@
+# PatchToolsBags 0.1.4 — 2026-11-05
+
+- Fix the blocked first bank-tab setup on Forever while preserving Blizzard's secure opening flow.
+- Show Forever bank expansion slots and forward locked-slot clicks to Blizzard's purchase confirmation.
+- Refresh the bank when additional slots become available.
+- Prevent Blizzard's carried-bag windows from briefly flashing before the PatchToolsBags window appears.
+- Preserve Classic Era support and restore native bag visibility when replacement is disabled.
+
+Validation: Forever bank opening, deposits and withdrawals were confirmed in game. Automated checks cover secure opening, expansion controls and confirmation forwarding, native visibility restoration, sorting and existing item interactions. The final expansion controls and flash correction still need broader gameplay coverage.
+
 # PatchToolsBags 0.1.3 — 2026-11-05
 
 - Fix opening the bag window on Forever.

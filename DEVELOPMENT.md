@@ -58,3 +58,9 @@ Forever's ContainerFrameItemButtonTemplate extends the intrinsic ItemButton widg
 Use the frame's IsMouseOver method when available, with the old MouseIsOver global only as a fallback. The runtime fixture deliberately removes the old global and verifies the client-specific widget type, filled/empty profession slots, counts, lock rendering, hover cleanup and native dragging.
 
 Money display uses Bags:FormatMoney for both windows and bank-slot costs. Prefer C_CurrencyInfo.GetCoinTextureString, retain the Classic Era global fallback, and use copper text if neither exists. The Forever opening fixture removes both legacy hover and currency globals.
+
+Forever bag access observes native global entry points with `hooksecurefunc` and defers custom presentation until the native call chain has returned. Do not replace those globals: BankFrame's OnShow calls OpenAllBags before the protected free-first-tab purchase. Coalesce nested entry points so one opening or toggle produces one custom-window action. Never hide protected native containers in combat. An empty purchased-tab list keeps native bank setup visible; BANK_TABS_CHANGED retries replacement after the first tab arrives.
+
+Forever expansion controls use secure click proxies targeting the original bank purchase and bag-slot buttons. Keep native parents and scripts intact. Clicking a locked slot opens the native next-slot confirmation; the addon never calls PurchaseBankTab. Refresh the visible bank after BANK_TABS_CHANGED, and hide proxy controls when returning to native presentation or ending the bank visit.
+
+Mask native carried-container pixels immediately while deferring logical hiding until the secure opening sequence finishes. Restore their original alpha after hiding or disabling replacement. Bank containers are excluded from this mask.

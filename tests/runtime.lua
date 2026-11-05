@@ -59,6 +59,20 @@ function methods:GetChildren()
  for _,frame in ipairs(frames) do if frame.parent==self then children[#children+1]=frame end end
  return table.unpack(children)
 end
+function methods:SetAttribute(key,value)
+ assert(not self.nativeScripts,'native button attributes must stay unchanged')
+ self.attributes=self.attributes or {}; self.attributes[key]=value
+end
+function methods:GetTexture() return self.texture end
+function methods:GetAttribute(key) return self.attributes and self.attributes[key] end
+function methods:Click()
+ if self.template and self.template:find('SecureActionButtonTemplate',1,true) then
+  assert(not self.scripts.OnClick,'secure proxy must keep its XML click handler')
+  assert(self:GetAttribute('type')=='click' and self:GetAttribute('useOnKeyDown')==false)
+  return self:GetAttribute('clickbutton'):Click()
+ end
+ if self.scripts.OnClick then self.scripts.OnClick(self) end
+end
 function methods:SetID(id) self.id=id end
 function methods:GetID() return self.id end
 function methods:SetScale(scale) self.scale=scale end
@@ -80,7 +94,7 @@ function CreateFrame(kind,name,parent,template)
  if template=='ContainerFrameItemButtonTemplate' or template=='BankItemButtonGenericTemplate' then
   assert(kind==(Bags.owner.isForever and 'ItemButton' or 'Button'),'use the correct client widget type')
  end
- local f=setmetatable({scripts={},events={},name=name,parent=parent,shown=true}, {__index=methods})
+ local f=setmetatable({scripts={},events={},name=name,parent=parent,shown=true,template=template}, {__index=methods})
  frames[#frames+1]=f
  if name then _G[name]=f end
  if template=='OptionsSliderTemplate' then _G[name..'Low']=CreateFrame('FontString'); _G[name..'High']=CreateFrame('FontString') end
@@ -539,3 +553,98 @@ assert(Bags:FormatMoney(42)=='legacy:42','Era legacy currency formatter remains 
 GetCoinTextureString=nil
 assert(Bags:FormatMoney(42)=='42 Kupfer','plain currency fallback if neither API is available')
 print('PASS: money display with modern currency namespace, legacy API and missing-API fallback.')
+
+-- Forever's bank grants the first tab after OpenAllBags returns. Global bag
+-- functions must remain native, including their nested OpenBackpack calls.
+local secureHooks={}
+hooksecurefunc=function(name,callback)
+ assert(type(name)=='string' and type(_G[name])=='function')
+ secureHooks[name]=callback
+end
+local inAddonHook=false
+local function NativeCall(name,...)
+ local result=_G[name](...)
+ if secureHooks[name] then
+  inAddonHook=true; secureHooks[name](...); inAddonHook=false
+ end
+ return result
+end
+local heldFrame=CreateFrame('Frame'); heldFrame:SetID(0); heldFrame:Hide()
+local professionFrame=CreateFrame('Frame'); professionFrame:SetID(5)
+local bankContainer=CreateFrame('Frame'); bankContainer:SetID(6); bankContainer:Show()
+ContainerFrameUtil_EnumerateContainerFrames=function() return ipairs({heldFrame,professionFrame,bankContainer}) end
+ToggleBackpack=function() heldFrame:SetShown(not heldFrame:IsShown()) end
+OpenBackpack=function() if not heldFrame:IsShown() then NativeCall('ToggleBackpack') end end
+OpenAllBags=function() NativeCall('OpenBackpack'); professionFrame:Show() end
+CloseBackpack=function() heldFrame:Hide() end
+CloseAllBags=function() NativeCall('CloseBackpack'); professionFrame:Hide() end
+ToggleAllBags=function() NativeCall('OpenAllBags') end
+ToggleBag=function(id) if id==0 then NativeCall('ToggleBackpack') end end
+local nativeOpen,nativeBackpack=OpenAllBags,OpenBackpack
+Bags:InstallBagAccess()
+assert(OpenAllBags==nativeOpen and OpenBackpack==nativeBackpack,'do not replace secure native bag functions')
+local grantedTabs={}
+local grants=0
+C_Bank={CanViewBank=function() return true end,FetchPurchasedBankTabIDs=function() return grantedTabs end,
+ PurchaseBankTab=function()
+  assert(not inAddonHook,'first tab purchase must remain in native bank execution')
+  grants=grants+1; grantedTabs={6}
+ end}
+Bags.bankOpen=true; Bags.bankManagement=nil
+Bags:UpdateBankReplacement()
+assert(Bags.bankManagement and not bank.window:IsShown() and BankFrame:GetAlpha()==.7,
+ 'bank with no tabs keeps native setup visible instead of a 0/0 replacement')
+-- The bank's native OnShow sequence continues before our deferred presentation.
+NativeCall('OpenAllBags',BankFrame)
+assert(Bags.bagAccessPending and grants==0)
+assert(heldFrame:IsShown() and heldFrame:GetAlpha()==0 and professionFrame:GetAlpha()==0,
+ 'native bags are visually masked before the deferred takeover, without changing secure opening visibility')
+assert(bankContainer:GetAlpha()==1,'carried-bag masking excludes the bank')
+C_Bank.PurchaseBankTab(0)
+Bags:HandleBankEvent('BANK_TABS_CHANGED'); drain()
+assert(grants==1 and bank.window:IsShown() and Bags.window:IsShown())
+assert(heldFrame:GetAlpha()==1 and professionFrame:GetAlpha()==1,'hidden native containers regain their original alpha')
+assert(not heldFrame:IsShown() and not professionFrame:IsShown() and bankContainer:IsShown(),
+ 'hide carried presentation only after native initialization, preserve bank containers')
+NativeCall('ToggleAllBags'); drain(); assert(not Bags.window:IsShown(),'nested native calls toggle custom window only once')
+NativeCall('ToggleAllBags'); drain(); assert(Bags.window:IsShown())
+NativeCall('OpenAllBags'); assert(heldFrame:GetAlpha()==0)
+Bags.db.replaceBags=false; Bags:MaskNativeCarriedBags(false)
+assert(heldFrame:GetAlpha()==1,'disabling replacement restores native appearance immediately')
+drain(); Bags.db.replaceBags=true
+Bags:HandleBankEvent('BANKFRAME_CLOSED'); drain()
+print('PASS: secure Forever bag hooks, nested opening, free first-bank-tab setup and deferred presentation.')
+
+-- Expansion slots mirror native bank controls through secure hardware clicks.
+Bags.bankOpen=true; Bags.bankManagement=nil; bank.bankSlotsExpanded=true
+BankFrame.BankPanel=CreateFrame('Frame',nil,BankFrame)
+function BankFrame.BankPanel:GetActiveBankType() return 0 end
+local buy=CreateFrame('Button',nil,BankFrame.BankPanel)
+BankFrame.BankPanel.PurchaseButton=buy
+local buyConfirmations=0
+buy:SetScript('OnClick',function(button)
+ assert(button:GetParent():GetActiveBankType()==0)
+ buyConfirmations=buyConfirmations+1
+end)
+local equipped=CreateFrame('Button',nil,BankFrame)
+equipped.bankType=0; equipped.bagSlotID=2; equipped.icon=CreateFrame('Texture'); equipped.icon:SetTexture('native-bag')
+local equippedClicks=0
+equipped:SetScript('OnClick',function(button) assert(button:GetParent()==BankFrame); equippedClicks=equippedClicks+1 end)
+BankFrame.itemButtonBagPool={EnumerateActive=function() return pairs({[equipped]=true}) end}
+C_Bank.FetchMaxNumBankTabs=function() return 9 end
+C_Bank.FetchNextPurchasableBankTabData=function() return {tabCost=1000} end
+grantedTabs={6}
+Bags:ShowBank(); drain()
+assert(bank:BankSlotRowHeight()==42 and #bank.foreverBankSlots==8)
+local locked=bank.foreverBankSlots[1]
+assert(locked:IsShown() and locked.locked and locked:GetAttribute('clickbutton')==buy)
+locked:Click(); assert(buyConfirmations==1 and grants==1,'locked slot requests native confirmation without purchase')
+assert(buy:GetParent()==BankFrame.BankPanel,'purchase control retains native ownership')
+capacities[7]=0; inventory[7]={}
+grantedTabs={6,7}; Bags:HandleBankEvent('BANK_TABS_CHANGED'); drain()
+assert(not locked.locked and locked:GetAttribute('clickbutton')==equipped)
+locked:Click(); assert(equippedClicks==1,'purchased slot keeps native bag-slot operation')
+bank.bankSlotsExpanded=false; bank:RefreshWindow(); assert(not locked:IsShown())
+Bags:HandleBankEvent('BANKFRAME_CLOSED'); drain()
+assert(not locked:IsShown())
+print('PASS: Forever expansion row, native confirmation forwarding, equipped slots and visit cleanup.')

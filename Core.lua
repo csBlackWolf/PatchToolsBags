@@ -119,7 +119,77 @@ function Bags:CanReplace()
     return true
 end
 function Bags:Toggle() self:CreateWindow(); self.window:SetShown(not self.window:IsShown()) end
+function Bags:MaskNativeCarriedBags(enabled)
+    self.nativeCarriedAlpha=self.nativeCarriedAlpha or {}
+    local saved=self.nativeCarriedAlpha
+    if not enabled then
+        for frame,alpha in pairs(saved) do frame:SetAlpha(alpha); saved[frame]=nil end
+        return
+    end
+    if not ContainerFrameUtil_EnumerateContainerFrames then return end
+    local carried={}
+    for _,bag in ipairs(self:BagIDs()) do carried[bag]=true end
+    for _,frame in ContainerFrameUtil_EnumerateContainerFrames() do
+        if carried[frame:GetID()] then
+            if frame:IsShown() then
+                if saved[frame]==nil then saved[frame]=frame:GetAlpha() end
+                frame:SetAlpha(0)
+            elseif saved[frame]~=nil then
+                frame:SetAlpha(saved[frame]); saved[frame]=nil
+            end
+        end
+    end
+end
+function Bags:InstallForeverBagAccess()
+    if self.foreverBagAccessInstalled then return end
+    self.foreverBagAccessInstalled=true
+    local operations={ToggleBackpack="toggle",ToggleAllBags="toggle",ToggleBag="bag",
+        OpenBackpack="open",OpenAllBags="open",CloseBackpack="close",CloseAllBags="close"}
+    for name,operation in pairs(operations) do
+        if type(_G[name])=="function" then
+            hooksecurefunc(name,function(id)
+                if not self:CanReplace() then self:MaskNativeCarriedBags(false); return end
+                -- Hide pixels immediately, but leave native logical visibility
+                -- intact until its secure bank/opening sequence has completed.
+                self:MaskNativeCarriedBags(true)
+                local op=operation
+                if op=="bag" then
+                    local carried=false
+                    for _,bag in ipairs(self:BagIDs()) do if id==bag then carried=true; break end end
+                    if not carried then return end
+                    op="toggle"
+                end
+                -- Native OpenAllBags nests OpenBackpack/ToggleBackpack. Apply
+                -- only the outermost result after the whole secure call ends.
+                self.pendingBagOperation=op
+                if self.bagAccessPending then return end
+                self.bagAccessPending=true
+                C_Timer.After(0,function()
+                    self.bagAccessPending=nil
+                    local action=self.pendingBagOperation; self.pendingBagOperation=nil
+                    if not self:CanReplace() then self:MaskNativeCarriedBags(false); return end
+                    self:CreateWindow()
+                    if action=="open" then self.window:Show()
+                    elseif action=="close" then self.window:Hide()
+                    else self:Toggle() end
+                    -- Close presentation only, after Blizzard has finished its
+                    -- bank setup. Do not replace any native global bag function.
+                    if ContainerFrameUtil_EnumerateContainerFrames then
+                        local carried={}
+                        for _,bag in ipairs(self:BagIDs()) do carried[bag]=true end
+                        for _,frame in ContainerFrameUtil_EnumerateContainerFrames() do
+                            if carried[frame:GetID()] and not (InCombatLockdown()
+                                and frame.IsProtected and frame:IsProtected()) then frame:Hide() end
+                        end
+                    end
+                    self:MaskNativeCarriedBags(true)
+                end)
+            end)
+        end
+    end
+end
 function Bags:InstallBagAccess()
+    if self.owner.isForever then self:InstallForeverBagAccess(); return end
     local operations={ToggleBackpack="toggle",ToggleAllBags="toggle",ToggleBag="bag",OpenBackpack="open",OpenAllBags="open",CloseBackpack="close",CloseAllBags="close"}
     for name,op in pairs(operations) do
         local original=_G[name]

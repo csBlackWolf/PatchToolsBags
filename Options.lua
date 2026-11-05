@@ -1,6 +1,6 @@
 local _,Bags=...
 function Bags:BuildOptions(parent)
-    local title=self:Text(parent,"PatchToolsBags · 0.1.3",16); title:SetPoint("TOPLEFT",0,-5)
+    local title=self:Text(parent,"PatchToolsBags · 0.1.4",16); title:SetPoint("TOPLEFT",0,-5)
     local intro=self:Text(parent,self:T("Your bags and bank in a compact window.","Deine Taschen und Bank in einem kompakten Fenster."),12)
     intro:SetPoint("TOPLEFT",0,-43); intro:SetWidth(560); intro:SetJustifyH("LEFT")
     local function Check(y,en,de,key)
@@ -9,6 +9,9 @@ function Bags:BuildOptions(parent)
         local label=Bags:Text(b,Bags:T(en,de),13); label:SetPoint("LEFT",b,"RIGHT",4,0)
         b:SetScript("OnClick",function()
             Bags.db[key]=b:GetChecked() and true or false
+            if key=="replaceBags" and Bags.owner.isForever and Bags.MaskNativeCarriedBags then
+                Bags:MaskNativeCarriedBags(Bags:CanReplace())
+            end
             if Bags.UpdateBankReplacement and (key=="replaceBank" or key=="replaceBags") then Bags:UpdateBankReplacement() end
             Bags:QueueRefresh()
         end)

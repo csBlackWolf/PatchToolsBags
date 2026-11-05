@@ -27,7 +27,11 @@ function Bags:BankBagIDs()
 end
 
 function Bags:CanReplaceBank()
-    return self.db.replaceBank~=false and self:CanReplace() and self:BankBagIDs()~=nil
+    local ids=self:BankBagIDs()
+    -- A new Forever character has no tabs until Blizzard securely grants the
+    -- free first one. Leave its native setup visible until that has completed.
+    return self.db.replaceBank~=false and self:CanReplace() and ids~=nil
+        and (not self.owner.isForever or #ids>0)
 end
 
 function Bags:CreateBankView()
@@ -36,6 +40,7 @@ function Bags:CreateBankView()
         self.windowDB.bank={scale=self.windowDB.scale,columns=self.windowDB.columns}
     end
     local view={isBank=true,owner=self.owner,db=self.db,windowDB=self.windowDB.bank}
+    if self.owner.isForever then view.bankSlotsExpanded=true end
     -- Share behavior, never window/button/layout state between the two views.
     setmetatable(view,{__index=function(_,key)
         if type(Bags[key])=="function" then return Bags[key] end
@@ -122,6 +127,10 @@ function Bags:SetNativeBankVisible(visible)
 end
 
 function Bags:BankSlotRowHeight()
+    if self.owner.isForever then
+        return self.bankSlotsExpanded and BankFrame and BankFrame.BankPanel
+            and BankFrame.BankPanel.PurchaseButton and 42 or 0
+    end
     -- Forever purchases tabs rather than equipping Era bank bags. Its native
     -- management view remains available; never reinterpret profession-bag IDs.
     return self.bankSlotsExpanded and not self.owner.isForever and BankSlotsFrame and BankSlotsFrame.Bag1 and 42 or 0
@@ -130,6 +139,7 @@ end
 function Bags:RestoreBankSlotControls()
     if self.bankView then
         for _,overlay in pairs(self.bankView.bankSlotPurchaseOverlays or {}) do overlay:Hide() end
+        for _,button in ipairs(self.bankView.foreverBankSlots or {}) do button:Hide() end
         if self.bankView.window.bankSlotCost then self.bankView.window.bankSlotCost:Hide() end
     end
     for _,entry in ipairs(self.nativeBankSlotControls or {}) do
@@ -145,7 +155,8 @@ end
 function Bags:LayoutBankSlotControls()
     if not self.isBank or not Bags.bankOpen or Bags.bankManagement then return end
     if InCombatLockdown and InCombatLockdown() then return end
-    self.window.bankBags:SetShown(not self.owner.isForever)
+    self.window.bankBags:Show()
+    if self.owner.isForever then self:LayoutForeverBankSlots(); return end
     if self:BankSlotRowHeight()==0 then
         for _,entry in ipairs(Bags.nativeBankSlotControls or {}) do entry.button:Hide() end
         for _,overlay in pairs(self.bankSlotPurchaseOverlays or {}) do overlay:Hide() end
@@ -216,6 +227,7 @@ function Bags:ShowBank()
         for _,id in ipairs(self:BankBagIDs()) do if id>=0 then CloseBag(id) end end
     end
     view.window:Show()
+    view:QueueRefresh()
     self:CreateWindow(); self.window:Show()
 end
 
@@ -237,7 +249,10 @@ function Bags:UpdateBankReplacement()
 end
 
 function Bags:HandleBankEvent(event)
-    if event=="BANKFRAME_OPENED" then
+    if event=="BANK_TABS_CHANGED" and self.owner.isForever then
+        C_Timer.After(0,function() if self.bankOpen then self:UpdateBankReplacement() end end)
+        return true
+    elseif event=="BANKFRAME_OPENED" then
         self.bankOpen=true; self.bankManagement=nil
         -- UIParent opens native bank bags during this event too. Replace the
         -- presentation after those handlers finish, without closing the bank.
@@ -257,4 +272,62 @@ end
 function Bags:InstallBankAccess(events)
     for _,event in ipairs({"BANKFRAME_OPENED","BANKFRAME_CLOSED","PLAYERBANKSLOTS_CHANGED"}) do events:RegisterEvent(event) end
     events:RegisterEvent(self.owner.isForever and "BANK_TABS_CHANGED" or "PLAYERBANKBAGSLOTS_CHANGED")
+end
+
+function Bags:LayoutForeverBankSlots()
+    self.foreverBankSlots=self.foreverBankSlots or {}
+    for _,button in ipairs(self.foreverBankSlots) do button:Hide() end
+    if self.window.bankSlotCost then self.window.bankSlotCost:Hide() end
+    if self:BankSlotRowHeight()==0 then return end
+    local kind=Enum.BankType.Character
+    local native=BankFrame.BankPanel.PurchaseButton
+    local ids=Bags:BankBagIDs() or {}
+    local maximum=C_Bank.FetchMaxNumBankTabs and C_Bank.FetchMaxNumBankTabs(kind) or #ids
+    local nextTab=C_Bank.FetchNextPurchasableBankTabData and C_Bank.FetchNextPurchasableBankTabData(kind)
+    local nativeSlots={}
+    if BankFrame.itemButtonBagPool then
+        for button in BankFrame.itemButtonBagPool:EnumerateActive() do
+            if button.bankType==kind then nativeSlots[button.bagSlotID]=button end
+        end
+    end
+    -- The first tab is the built-in bank. Remaining slots are its extensions.
+    for slot=2,maximum do
+        local button=self.foreverBankSlots[slot-1]
+        if not button then
+            button=CreateFrame("Button",nil,self.window,"SecureActionButtonTemplate, BackdropTemplate")
+            button:SetSize(28,28); button:RegisterForClicks("LeftButtonUp","RightButtonUp")
+            button:SetAttribute("useOnKeyDown",false); button:SetAttribute("type","click")
+            button:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",edgeSize=8})
+            button:SetBackdropColor(.055,.045,.035,1); button:SetBackdropBorderColor(.48,.37,.23,1)
+            button.icon=button:CreateTexture(nil,"ARTWORK"); button.icon:SetPoint("CENTER"); button.icon:SetSize(22,22)
+            button:SetScript("OnEnter",function(b)
+                GameTooltip:SetOwner(b,"ANCHOR_TOP")
+                GameTooltip:SetText(b.locked and self:T("Unlock bank bag slot","Banktaschenplatz freischalten")
+                    or self:T("Bank bag slot","Banktaschenplatz"),1,.82,0)
+                if b.locked and b.cost then GameTooltip:AddLine(self:FormatMoney(b.cost),1,1,1) end
+                GameTooltip:Show()
+            end)
+            button:SetScript("OnLeave",function() GameTooltip:Hide() end)
+            self.foreverBankSlots[slot-1]=button
+        end
+        button.locked=slot>#ids
+        button.cost=nextTab and nextTab.tabCost
+        local target=button.locked and native or nativeSlots[slot]
+        -- Forward the hardware click to Blizzard's unchanged button. In
+        -- particular, never call PurchaseBankTab from addon Lua.
+        button:SetAttribute("clickbutton",target)
+        button:SetAttribute("type",target and "click" or nil)
+        local original=nativeSlots[slot]
+        local icon=original and (original.icon or original.Icon)
+        button.icon:SetTexture(button.locked and "Interface\\Buttons\\LockButton-Locked-Up"
+            or (icon and icon:GetTexture()) or "Interface\\PaperDoll\\UI-PaperDoll-Slot-Bag")
+        button:ClearAllPoints(); button:SetPoint("BOTTOMLEFT",self.window,"BOTTOMLEFT",8+(slot-2)*31,28)
+        button:Show()
+    end
+    if nextTab then
+        if not self.window.bankSlotCost then self.window.bankSlotCost=self:Text(self.window,"",11) end
+        local cost=self.window.bankSlotCost
+        cost:ClearAllPoints(); cost:SetPoint("BOTTOMRIGHT",self.window,"BOTTOMRIGHT",-8,34)
+        cost:SetText(self:FormatMoney(nextTab.tabCost)); cost:Show()
+    end
 end
