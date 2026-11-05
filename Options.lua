@@ -1,6 +1,6 @@
 local _,Bags=...
 function Bags:BuildOptions(parent)
-    local title=self:Text(parent,"PatchToolsBags · 0.1.2",16); title:SetPoint("TOPLEFT",0,-5)
+    local title=self:Text(parent,"PatchToolsBags · 0.1.3",16); title:SetPoint("TOPLEFT",0,-5)
     local intro=self:Text(parent,self:T("Your bags and bank in a compact window.","Deine Taschen und Bank in einem kompakten Fenster."),12)
     intro:SetPoint("TOPLEFT",0,-43); intro:SetWidth(560); intro:SetJustifyH("LEFT")
     local function Check(y,en,de,key)

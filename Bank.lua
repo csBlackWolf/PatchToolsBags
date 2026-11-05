@@ -184,7 +184,7 @@ function Bags:LayoutBankSlotControls()
                     GameTooltip:SetOwner(overlay,"ANCHOR_TOP")
                     GameTooltip:SetText(self:T("Unlock bank bag slot","Banktaschenplatz freischalten"),1,.82,0)
                     local count=GetNumBankSlots()
-                    GameTooltip:AddLine(GetCoinTextureString(GetBankSlotCost(count)),1,1,1)
+                    GameTooltip:AddLine(self:FormatMoney(GetBankSlotCost(count)),1,1,1)
                     GameTooltip:Show()
                 end)
                 overlay:SetScript("OnLeave",function() GameTooltip:Hide() end)
@@ -202,7 +202,7 @@ function Bags:LayoutBankSlotControls()
         if not self.window.bankSlotCost then self.window.bankSlotCost=self:Text(self.window,"",11) end
         local cost=self.window.bankSlotCost
         cost:ClearAllPoints(); cost:SetPoint("RIGHT",purchase,"LEFT",-6,0)
-        cost:SetText(full and "" or GetCoinTextureString(GetBankSlotCost(count)))
+        cost:SetText(full and "" or self:FormatMoney(GetBankSlotCost(count)))
         cost:SetShown(not full)
     end
 end

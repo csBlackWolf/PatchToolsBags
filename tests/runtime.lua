@@ -52,6 +52,7 @@ function methods:SetBackdropBorderColor(...) self.border={...} end
 function methods:GetOwner() return self.owner end
 function methods:GetAlpha() return self.alpha or 1 end
 function methods:IsMouseEnabled() return self.mouseEnabled~=false end
+function methods:IsMouseOver() return self.mouseOver==true end
 function methods:EnableMouse(enabled) self.mouseEnabled=enabled end
 function methods:GetChildren()
  local children={}
@@ -76,12 +77,17 @@ function methods:IsShown() return self.shown end
 function methods:Enable() self.enabled=true end
 function methods:Disable() self.enabled=false end
 function CreateFrame(kind,name,parent,template)
- assert(kind~='ItemButton','Classic template uses Button')
+ if template=='ContainerFrameItemButtonTemplate' or template=='BankItemButtonGenericTemplate' then
+  assert(kind==(Bags.owner.isForever and 'ItemButton' or 'Button'),'use the correct client widget type')
+ end
  local f=setmetatable({scripts={},events={},name=name,parent=parent,shown=true}, {__index=methods})
  frames[#frames+1]=f
  if name then _G[name]=f end
  if template=='OptionsSliderTemplate' then _G[name..'Low']=CreateFrame('FontString'); _G[name..'High']=CreateFrame('FontString') end
  if template=='ContainerFrameItemButtonTemplate' or template=='BankItemButtonGenericTemplate' then
+  f.kind=kind
+  f.icon=CreateFrame('Texture',name..'IconTexture',f)
+  f.Count=CreateFrame('FontString',name..'Count',f)
   _G[name..'Cooldown']=CreateFrame('Cooldown')
   f.nativeScripts=true
   f.scripts.OnClick=function(button,key)
@@ -109,8 +115,12 @@ GetMoney=function() return 100 end
 GetCoinTextureString=tostring
 ResetCursor=noop
 ShowInspectCursor=noop
-MouseIsOver=function() return false end
-SetItemButtonTexture=noop; SetItemButtonCount=noop; SetItemButtonDesaturated=noop; CooldownFrame_Set=noop
+-- Reproduce the Forever report: the old global hover helper is absent.
+MouseIsOver=nil
+SetItemButtonTexture=function(b,texture) assert(b.icon); b.icon:SetTexture(texture) end
+SetItemButtonCount=function(b,count) assert(b.Count); b.Count:SetText(count>1 and tostring(count) or ''); b.Count:SetShown(count>1) end
+SetItemButtonDesaturated=function(b,value) assert(b.icon); b.icon:SetDesaturated(value) end
+CooldownFrame_Set=noop
 hooksecurefunc=noop
 local loaded={Baganator=true}
 C_AddOns={IsAddOnLoaded=function(name) return loaded[name] end}
@@ -494,3 +504,38 @@ Bags.window:Hide(); cursor={itemID=123}; Bags.window:Show(); drain()
 assert(sortCalls==2 and cursor.itemID==123,'opening with an item on the cursor skips sorting')
 cursor=nil; Bags.db.autoSortOnOpen=false; Bags.Sort=originalSort
 print('PASS: optional opening sort, default off, once per opening, cancellation, combat display only and safe stack merging.')
+
+-- Reopen a carried inventory with Forever's intrinsic ItemButton contract and
+-- no legacy hover global. Both filled and empty profession-bag slots render.
+Bags.window:Hide(); Bags.window=nil
+Bags.owner.isForever=true; Bags.owner.hasProfessionBag=true
+inventory[5]={{itemID=9,hyperlink='item:9',stackCount=4,quality=2,iconFileID=12345,isLocked=true}}
+capacities[5]=2
+C_CurrencyInfo={GetCoinTextureString=function(amount) return 'coins:'..tostring(amount) end}
+GetCoinTextureString=nil; GetMoney=function() return 42 end
+SlashCmdList.PATCHTOOLSBAGS(''); drain()
+assert(Bags.window:IsShown() and Bags.buttons['0:1'].kind=='ItemButton')
+assert(Bags.window.money:GetText()=='coins:42','Forever currency namespace works without the old global')
+assert(Bags:FormatMoney(10000)=='coins:10000','bank prices use the same currency adapter')
+local profession=Bags.buttons['5:1']
+assert(profession.icon.texture==12345 and profession.Count:GetText()=='4' and profession.Count:IsShown())
+assert(profession.icon.desaturated==true and not Bags.buttons['5:2'].Count:IsShown())
+assert(Bags.buttons['5:2'].icon.texture=='Interface\\Buttons\\WHITE8X8')
+profession.mouseOver=true; profession.scripts.OnEnter(profession)
+assert(profession.hover:IsShown()); Bags:RefreshWindow(); assert(profession.hover:IsShown(),'keep hover while the mouse remains over the item')
+profession.mouseOver=false; Bags:RefreshWindow(); assert(not profession.hover:IsShown(),'clear hover when it leaves the item')
+local mouseMethod=methods.IsMouseOver
+methods.IsMouseOver=nil; MouseIsOver=function(button) return button.mouseOver end
+profession.mouseOver=true; profession.scripts.OnEnter(profession); Bags:RefreshWindow()
+assert(profession.hover:IsShown(),'legacy hover API fallback')
+profession.mouseOver=false; Bags:RefreshWindow(); assert(not profession.hover:IsShown())
+methods.IsMouseOver=mouseMethod; MouseIsOver=nil
+profession.scripts.OnDragStart(profession)
+assert(cursor and cursor.itemID==9,'Forever native drag still picks up the real profession-bag item')
+C_Container.PickupContainerItem(5,1); assert(not cursor)
+print('PASS: Forever intrinsic item buttons, missing MouseIsOver global, icon/count/lock rendering, profession bags, hover cleanup and native dragging.')
+C_CurrencyInfo=nil; GetCoinTextureString=function(amount) return 'legacy:'..tostring(amount) end
+assert(Bags:FormatMoney(42)=='legacy:42','Era legacy currency formatter remains supported')
+GetCoinTextureString=nil
+assert(Bags:FormatMoney(42)=='42 Kupfer','plain currency fallback if neither API is available')
+print('PASS: money display with modern currency namespace, legacy API and missing-API fallback.')

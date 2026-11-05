@@ -1,3 +1,12 @@
+# PatchToolsBags 0.1.3 — 2026-11-05
+
+- Fix opening the bag window on Forever.
+- Restore item icons and stack counts with the correct Forever item-button type.
+- Fix the money display and keep bank-slot prices compatible with the current currency API.
+- Preserve Classic Era support and the existing native item interactions.
+
+Validation: bag opening confirmed in game on Forever. Automated checks cover missing legacy mouse/currency functions, item rendering, stack counts, profession bags, dragging and the existing inventory/bank regressions.
+
 # PatchToolsBags 0.1.2 — 2026-10-27
 
 The tested bag and bank improvements are now part of the regular release.

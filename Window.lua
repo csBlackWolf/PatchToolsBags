@@ -1,5 +1,10 @@
 local _,Bags=...
 local bronze={0.38,0.29,0.14,1}
+function Bags:FormatMoney(amount)
+    local format=C_CurrencyInfo and C_CurrencyInfo.GetCoinTextureString or GetCoinTextureString
+    if format then return format(amount) end
+    return tostring(amount).." "..self:T("copper","Kupfer")
+end
 function Bags:Backdrop(frame)
     frame:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
     frame:SetBackdropColor(0.045,0.035,0.025,0.97)
@@ -113,7 +118,10 @@ function Bags:CreateItemButton(parent,bag,slot)
     -- The standard template supplies stack splitting, drag and item behavior.
     local template=self.isBank and bag==(BANK_CONTAINER or -1) and not self.owner.isForever
         and "BankItemButtonGenericTemplate" or "ContainerFrameItemButtonTemplate"
-    local b=CreateFrame("Button", (self.isBank and "PatchToolsBankItem" or "PatchToolsBagsItem")..bag.."_"..slot,parent,template)
+    -- Forever's template extends the intrinsic ItemButton widget, which owns
+    -- the icon/count fields. Era's older template requires a plain Button.
+    local kind=self.owner.isForever and "ItemButton" or "Button"
+    local b=CreateFrame(kind, (self.isBank and "PatchToolsBankItem" or "PatchToolsBagsItem")..bag.."_"..slot,parent,template)
     b.Cooldown=_G[b:GetName().."Cooldown"]
     local normal=b:GetNormalTexture()
     if normal then normal:Hide() end
@@ -373,7 +381,10 @@ function Bags:RefreshWindow()
         if not b:IsShown() then b:Show() end
         b.hasItem=s.info~=nil; b.readable=s.info and s.info.isReadable
         self:ResetItemDecorations(b)
-        if not MouseIsOver(b) or GetCursorInfo() then self:ClearItemHover(b) end
+        local hovered
+        if b.IsMouseOver then hovered=b:IsMouseOver()
+        elseif MouseIsOver then hovered=MouseIsOver(b) end
+        if not hovered or GetCursorInfo() then self:ClearItemHover(b) end
         SetItemButtonTexture(b,s.info and s.info.iconFileID or "Interface\\Buttons\\WHITE8X8")
         local icon=b.icon or _G[b:GetName().."IconTexture"]
         if icon then
@@ -413,7 +424,7 @@ function Bags:RefreshWindow()
     end
     for key,b in pairs(self.buttons) do if not active[key] and b:IsShown() then b:Hide() end end
     f.summary:SetText(string.format(self:T("%d / %d slots · %d free","%d / %d Plätze · %d frei"),used,#slots,#slots-used))
-    f.money:SetText(GetCoinTextureString(GetMoney()))
+    f.money:SetText(self:FormatMoney(GetMoney()))
     if self.isBank then self:LayoutBankSlotControls() end
     f.sort.label:SetText(self.sorting and self:T("Sorting…","Sortiert…") or self:T("Sort","Sortieren"))
 end
