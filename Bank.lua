@@ -40,7 +40,8 @@ function Bags:CreateBankView()
         self.windowDB.bank={scale=self.windowDB.scale,columns=self.windowDB.columns}
     end
     local view={isBank=true,owner=self.owner,db=self.db,windowDB=self.windowDB.bank}
-    if self.owner.isForever then view.bankSlotsExpanded=true end
+    -- Expansion slots are opened with the same title-bar toggle on both clients.
+    view.bankSlotsExpanded=false
     -- Share behavior, never window/button/layout state between the two views.
     setmetatable(view,{__index=function(_,key)
         if type(Bags[key])=="function" then return Bags[key] end
@@ -129,7 +130,7 @@ end
 function Bags:BankSlotRowHeight()
     if self.owner.isForever then
         return self.bankSlotsExpanded and BankFrame and BankFrame.BankPanel
-            and BankFrame.BankPanel.PurchaseButton and 42 or 0
+            and BankFrame.BankPanel.PurchaseButton and 60 or 0
     end
     -- Forever purchases tabs rather than equipping Era bank bags. Its native
     -- management view remains available; never reinterpret profession-bag IDs.
@@ -321,13 +322,13 @@ function Bags:LayoutForeverBankSlots()
         local icon=original and (original.icon or original.Icon)
         button.icon:SetTexture(button.locked and "Interface\\Buttons\\LockButton-Locked-Up"
             or (icon and icon:GetTexture()) or "Interface\\PaperDoll\\UI-PaperDoll-Slot-Bag")
-        button:ClearAllPoints(); button:SetPoint("BOTTOMLEFT",self.window,"BOTTOMLEFT",8+(slot-2)*31,28)
+        button:ClearAllPoints(); button:SetPoint("BOTTOMLEFT",self.window,"BOTTOMLEFT",26+(slot-2)*31,44)
         button:Show()
     end
     if nextTab then
         if not self.window.bankSlotCost then self.window.bankSlotCost=self:Text(self.window,"",11) end
         local cost=self.window.bankSlotCost
-        cost:ClearAllPoints(); cost:SetPoint("BOTTOMRIGHT",self.window,"BOTTOMRIGHT",-8,34)
-        cost:SetText(self:FormatMoney(nextTab.tabCost)); cost:Show()
+        cost:ClearAllPoints(); cost:SetPoint("BOTTOMLEFT",self.window,"BOTTOMLEFT",26,28)
+        cost:SetText(self:T("Next bank slot: ","Nächster Bankplatz: ")..self:FormatMoney(nextTab.tabCost)); cost:Show()
     end
 end

@@ -236,6 +236,16 @@ assert(Bags.buttons['0:3'].point[4]==26 and Bags.buttons['0:3'].point[5]==-58,'S
 assert(Bags.buttons['2:1'].point[5]<Bags.buttons['0:3'].point[5],'Specialty slots must be below normal bags')
 
 local previous=mutations; Bags:Sort(); drain(); assert(mutations==previous,'Already sorted inventory should do no work')
+C_Item.GetItemFamily=function(link) return link=='item:3' and 2 or 0 end
+combat=true; Bags:Sort(); drain()
+assert(mutations==previous,'Combat must also skip specialty transfers')
+combat=false; Bags.db.sortSpecialtyBags=false; Bags:Sort(); drain()
+assert(mutations==previous,'Disabling specialty routing must preserve real placement')
+Bags.db.sortSpecialtyBags=true; Bags:Sort(); drain()
+assert(not inventory[0][1] and inventory[2][2].itemID==3,'Matching goods must move into an empty specialty slot')
+assert(not cursor and not Bags.sorting,'An empty-slot transfer must finish and confirm cleanly')
+C_Container.PickupContainerItem(2,2); C_Container.PickupContainerItem(0,1)
+C_Item.GetItemFamily=nil; Bags:RefreshWindow()
 local source,target=Bags.buttons['0:3'],Bags.buttons['0:2']
 local sourceX,sourceY=source.point[4],source.point[5]
 local targetX,targetY=target.point[4],target.point[5]
@@ -634,9 +644,15 @@ BankFrame.itemButtonBagPool={EnumerateActive=function() return pairs({[equipped]
 C_Bank.FetchMaxNumBankTabs=function() return 9 end
 C_Bank.FetchNextPurchasableBankTabData=function() return {tabCost=1000} end
 grantedTabs={6}
+bank.bankSlotsExpanded=false
 Bags:ShowBank(); drain()
-assert(bank:BankSlotRowHeight()==42 and #bank.foreverBankSlots==8)
+assert(bank:BankSlotRowHeight()==0,'Forever expansion row starts collapsed')
+bank.window.bankBags:Click()
+assert(bank:BankSlotRowHeight()==60 and #bank.foreverBankSlots==8)
 local locked=bank.foreverBankSlots[1]
+assert(locked.point[4]==26,'Expansion slots align with the item grid')
+assert(bank.window.bankSlotCost.point[1]=='BOTTOMLEFT'
+ and bank.window.bankSlotCost.text:find('Nächster Bankplatz:',1,true),'Price must be labeled beside the slots')
 assert(locked:IsShown() and locked.locked and locked:GetAttribute('clickbutton')==buy)
 locked:Click(); assert(buyConfirmations==1 and grants==1,'locked slot requests native confirmation without purchase')
 assert(buy:GetParent()==BankFrame.BankPanel,'purchase control retains native ownership')
@@ -644,7 +660,25 @@ capacities[7]=0; inventory[7]={}
 grantedTabs={6,7}; Bags:HandleBankEvent('BANK_TABS_CHANGED'); drain()
 assert(not locked.locked and locked:GetAttribute('clickbutton')==equipped)
 locked:Click(); assert(equippedClicks==1,'purchased slot keeps native bag-slot operation')
-bank.bankSlotsExpanded=false; bank:RefreshWindow(); assert(not locked:IsShown())
+bank.window.bankBags:Click(); assert(not locked:IsShown() and not bank.window.bankSlotCost:IsShown())
 Bags:HandleBankEvent('BANKFRAME_CLOSED'); drain()
 assert(not locked:IsShown())
 print('PASS: Forever expansion row, native confirmation forwarding, equipped slots and visit cleanup.')
+
+-- Forever's extra bag can report family zero; reagent eligibility is supplied
+-- separately by the item API. Exercise scanning and the confirmed transfer.
+inventory={[0]={{itemID=12,hyperlink='item:12',stackCount=6,quality=1},
+ {itemID=13,hyperlink='item:13',stackCount=1,quality=1}},[1]={},[2]={},[3]={},[4]={},[5]={}}
+capacities={[0]=2,[1]=0,[2]=0,[3]=0,[4]=0,[5]=2}
+C_Container.GetContainerNumFreeSlots=function() return 0,0 end
+C_Item.GetItemInfo=function(link)
+ local id=tonumber(link:match('%d+'))
+ return 'Item '..id,link,1,1,1,'Type','Subtype',20,'',1,1,7,0,0,0,nil,id==12
+end
+Bags.itemCache={}; Bags.layout=nil; Bags.db.autoSortOnOpen=false
+Bags.window:Show(); Bags:Sort(); drain()
+assert(not cursor and not Bags.sorting and not inventory[0][1])
+assert(inventory[5][1].itemID==12 and inventory[5][1].stackCount==6)
+assert(inventory[0][2].itemID==13,'Non-reagents must stay out of the profession bag')
+assert(#Bags:Sections(Bags:Scan())==2,'Reagent bag retains its own section')
+print('PASS: Forever reagent metadata, physical transfer confirmation and separate bag display.')

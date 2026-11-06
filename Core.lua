@@ -16,19 +16,24 @@ function Bags:Scan()
         local _,family=C_Container.GetContainerNumFreeSlots(bag)
         for slot=1,C_Container.GetContainerNumSlots(bag) do
             local info=C_Container.GetContainerItemInfo(bag,slot)
-            local s={bag=bag,slot=slot,family=family or 0,info=info}
+            local reagentBag=self.owner.hasProfessionBag and not self.isBank
+                and bag==(Enum and Enum.BagIndex and Enum.BagIndex.ReagentBag or 5)
+            local s={bag=bag,slot=slot,family=family or 0,reagentBag=reagentBag,info=info}
             if info then
                 local key=info.hyperlink or info.itemID
                 local cached=self.itemCache[key]
                 if not cached then
-                    local name,_,_,_,_,kind,subkind,maxStack,_,_,price,class,subclass=getInfo(key)
-                    cached={name=name,kind=kind,subkind=subkind,maxStack=maxStack,price=price,class=class,subclass=subclass}
+                    local name,_,_,_,_,kind,subkind,maxStack,_,_,price,class,subclass,_,_,_,reagent=getInfo(key)
+                    cached={name=name,kind=kind,subkind=subkind,maxStack=maxStack,price=price,class=class,subclass=subclass,reagent=reagent}
                     if name then self.itemCache[key]=cached end
                 end
                 local name,kind,subkind,maxStack,price,class,subclass=cached.name,cached.kind,cached.subkind,cached.maxStack,cached.price,cached.class,cached.subclass
                 s.name=name or "..."; s.maxStack=maxStack or 1
                 s.class=class or 99; s.subclass=subclass or 99
                 s.ready=name~=nil and info.hyperlink~=nil
+                local getFamily=C_Item and C_Item.GetItemFamily or GetItemFamily
+                s.itemFamily=getFamily and getFamily(key)
+                s.isCraftingReagent=cached.reagent
                 s.search=string.lower(table.concat({s.name,tostring(info.itemID),kind or "",subkind or ""}," "))
                 local quest=C_Container.GetContainerItemQuestInfo(bag,slot)
                 s.mark=self:Classify(info,quest and (quest.isQuestItem or quest.questID),price,self.owner.db or {})
@@ -64,7 +69,7 @@ function Bags:Sort()
     self:Sections(self:Scan(),true)
     self:RefreshWindow()
     if InCombatLockdown() then
-        self:Print("Display sorted. Stack merging is skipped during combat.","Anzeige sortiert. Stapel werden im Kampf nicht zusammengeführt.")
+        self:Print("Display sorted. Stacks and specialty-bag moves are skipped during combat.","Anzeige sortiert. Stapel und Spezialtaschen werden im Kampf nicht umgeräumt.")
         return
     end
     self.sorting=true
@@ -73,7 +78,7 @@ function Bags:Sort()
         if not self.sorting then return end
         if self.IsAvailable and not self:IsAvailable() then self:StopSort(); return end
         if InCombatLockdown() then
-            self:StopSort({"Stack merging stopped because combat started.","Stapelzusammenführung wegen Kampfbeginn angehalten."}); return
+            self:StopSort({"Item moves stopped because combat started.","Gegenstandsverschiebungen wegen Kampfbeginn angehalten."}); return
         end
         if GetCursorInfo() or not self.window:IsShown() then self:StopSort(); return end
         local move,reason=self:NextMove(self:Scan())
@@ -83,9 +88,9 @@ function Bags:Sort()
         if steps>1000 then self:StopSort({"Sorting stopped; please try again.","Sortierung angehalten; bitte erneut versuchen."}); return end
         local a,b=move.from,move.to
         local ai,bi=a.info,b.info
-        local amount=math.min(ai.stackCount,b.maxStack-bi.stackCount)
+        local amount=bi and math.min(ai.stackCount,b.maxStack-bi.stackCount) or ai.stackCount
         local expectedA=ai.stackCount-amount>0 and {hyperlink=ai.hyperlink,stackCount=ai.stackCount-amount} or nil
-        local expectedB={hyperlink=bi.hyperlink,stackCount=bi.stackCount+amount}
+        local expectedB={hyperlink=ai.hyperlink,stackCount=(bi and bi.stackCount or 0)+amount}
         -- Only slots in this view are touched; never clear or delete a cursor.
         C_Container.PickupContainerItem(a.bag,a.slot)
         local cursor,id=GetCursorInfo()
@@ -227,7 +232,7 @@ events:SetScript("OnEvent",function(_,event)
             PatchToolsBagsCharacterDB={scale=Bags.db.scale,columns=Bags.db.columns,x=Bags.db.x,y=Bags.db.y}
         end
         Bags.windowDB=PatchToolsBagsCharacterDB
-        for k,v in pairs({replaceBags=true,replaceBank=true,markers=true,pawnUpgrades=true,autoSortOnOpen=false,backgroundTransparency=0}) do if Bags.db[k]==nil then Bags.db[k]=v end end
+        for k,v in pairs({replaceBags=true,replaceBank=true,markers=true,pawnUpgrades=true,sortSpecialtyBags=true,autoSortOnOpen=false,backgroundTransparency=0}) do if Bags.db[k]==nil then Bags.db[k]=v end end
         Bags.windowDB.columns=math.max(6,math.min(16,tonumber(Bags.windowDB.columns) or 10))
         Bags.windowDB.scale=math.max(0.65,math.min(1.3,tonumber(Bags.windowDB.scale) or 1))
         Bags.db.backgroundTransparency=math.max(0,math.min(0.8,tonumber(Bags.db.backgroundTransparency) or 0))

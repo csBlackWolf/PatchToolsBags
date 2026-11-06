@@ -1,3 +1,12 @@
+# PatchToolsBags 0.1.5 — 2026-11-06
+
+- Keep confirmed Pawn upgrade arrows visible while their ratings are refreshed, reducing flicker when items enter the inventory.
+- Optionally move matching items into specialty and reagent bags when sorting outside combat. Enabled by default; combat sorting still changes the display only.
+- Start with bank expansion slots collapsed on both clients and align them with the inventory grid.
+- Label the next bank-slot price beside the expansion controls.
+
+Validation: automated checks cover upgrade-cache refresh, specialty-bag routing, bank layout and existing item interactions on both supported clients. Broader gameplay testing remains welcome.
+
 # PatchToolsBags 0.1.4 — 2026-11-05
 
 - Fix the blocked first bank-tab setup on Forever while preserving Blizzard's secure opening flow.

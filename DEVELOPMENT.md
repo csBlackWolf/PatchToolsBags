@@ -15,13 +15,17 @@ Keep real bag/slot identity separate from display position. Visual sorting order
 
 ## Inventory actions
 
-Only identical partial stacks move physically when Sort runs. Automatic sorting on opening is opt-in and uses the same operation; closing before its delayed callback cancels it. Match the full item variant and bag family, preserve item counts, and stop for combat, a nonempty cursor, locks, missing cached data, unexpected inventory changes or an unconfirmed move. Closing the window stops subsequent movements. Do not queue merging after combat or clear a player's cursor.
+Sort physically merges identical partial stacks. With `sortSpecialtyBags` enabled (the default), it also moves items from general bags into compatible specialty stacks or empty specialty slots. Match the full item variant and the item/bag family masks. Forever's extra reagent bag uses the item API's `isCraftingReagent` result and remains a separate display section even when its family mask is zero. Never swap unrelated items or pull goods out of specialty bags to make room.
+
+Automatic sorting on opening is opt-in and uses the same operation; closing before its delayed callback cancels it. Preserve item counts and stop for combat, a nonempty cursor, locks, missing cached data, unexpected inventory changes or an unconfirmed move. Closing the window stops subsequent movements. Do not queue physical moves after combat or clear a player's cursor.
 
 Use Blizzard's native container-item handlers and secure button behavior for clicks, drag/drop, feeding, equipping, selling and stack splitting. Calling protected item-use functions through an ordinary custom click handler can fail even when the click itself came from the player. Test native cursor behavior at a vendor as well as the item action.
 
 Do not automatically delete, equip, use or sell items. PatchTools owns vendor automation and selling lists. Quest/protection rules take precedence over sale/junk markers. This module uses Blizzard APIs and artwork; it does not include another bag addon's implementation or require Syndicator.
 
 ## Rendering
+
+Pawn invalidation marks cached results for rechecking without discarding the last completed answer. If the public advisor returns nil because its calculation budget is exhausted, retain that answer for the same item link until a new result arrives. A confirmed false removes the arrow; new or different links never inherit it.
 
 Use rounded native icon-frame artwork for rarity and quest borders. Keep overlay markers inset from the top and left edges, with a soft black silhouette for contrast. Junk uses the same coin shape as sale markers, desaturated. Section icons stay small, with free-space counts and a tooltip listing the bags.
 

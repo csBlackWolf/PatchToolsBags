@@ -22,11 +22,20 @@ assert(not bags:PawnUpgrade('ordinary')); assert(not bags:PawnUpgrade('ordinary'
 assert(not bags:PawnUpgrade('pending')); assert(#queue==1)
 pending=false; queue[1](); assert(refreshes==1)
 assert(not bags:PawnUpgrade('pending'))
-callback(); assert(bags.pawnUpgradeCache.upgrade==nil)
+callback(); assert(bags.pawnUpgradeCache.upgrade==true)
 assert(bags:PawnUpgrade('upgrade'))
 replace=false; bags:ConnectPawn(); assert(unregistered==1,'preview must leave native bag integration enabled')
 PawnCommon.ShowBagUpgradeAdvisor=false; assert(bags:ConnectPawn(),'Pawn native-bag preference must not hide our arrows')
 bags.db.pawnUpgrades=false; assert(not bags:ConnectPawn(),'our own arrow preference is respected')
 bags.db.pawnUpgrades=true; assert(bags:ConnectPawn())
 assert(bags:PawnUpgrade('requires-level-20'),'an upgrade above the current level must keep its arrow')
+local originalAdvisor=PawnShouldItemLinkHaveUpgradeArrow
+assert(bags:PawnUpgrade('upgrade'))
+PawnShouldItemLinkHaveUpgradeArrow=function() return nil end
+callback()
+assert(bags:PawnUpgrade('upgrade'),'pending recalculation must retain the previous arrow')
+assert(not bags:PawnUpgrade('new-pending'),'unknown items must not borrow another item arrow')
+PawnShouldItemLinkHaveUpgradeArrow=function() return false end
+assert(not bags:PawnUpgrade('upgrade'),'a completed negative answer must remove a stale arrow')
+PawnShouldItemLinkHaveUpgradeArrow=originalAdvisor
 print('PASS: optional Pawn, budget retry, cache invalidation, native bag fallback and arrow preference.')

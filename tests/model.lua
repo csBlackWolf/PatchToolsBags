@@ -67,3 +67,34 @@ assert(sections[1].slots[1]==b,'Refresh must not apply fresh sorting')
 local extra=item(4,1,2); extra.bag=2; extra.slot=1
 sections=Bags:Sections({a,b,c,extra})
 assert(#sections==3,'Separate specialty bags need separate sections even with the same family')
+
+-- Empty specialty slots, full bags, compatible partial stacks, suffixes,
+-- missing item data and Forever's separate reagent slot.
+local herb=item(10,8); herb.itemFamily=32; herb.bag=0; herb.slot=1
+local ore=item(11,4); ore.itemFamily=64
+local herbSlot={bag=2,slot=1,family=32}
+local oreSlot={bag=3,slot=1,family=64}
+local m=Bags:NextMove({herb,ore,herbSlot,oreSlot})
+assert(m.kind=='specialty' and m.from==herb and m.to==herbSlot)
+local partial=item(10,18,32)
+m=Bags:NextMove({herb,herbSlot,partial})
+assert(m.to==partial and m.kind=='merge','Compatible existing stack takes priority over an empty slot')
+local full=item(10,20,32)
+assert(not Bags:NextMove({herb,full}),'Full specialty bags must never swap items out')
+assert(not Bags:NextMove({ore,herbSlot}),'Incompatible goods must remain in general bags')
+herb.itemFamily=nil
+assert(not Bags:NextMove({herb,herbSlot}),'Missing family data must not guess compatibility')
+herb.itemFamily=32
+local reagent={bag=5,slot=1,family=0,reagentBag=true}
+herb.isCraftingReagent=true
+m=Bags:NextMove({herb,reagent}); assert(m.to==reagent)
+assert(not Bags:NextMove({ore,reagent}),'Only confirmed crafting reagents enter the Forever reagent bag')
+Bags.db.sortSpecialtyBags=false
+assert(not Bags:NextMove({herb,reagent,herbSlot}),'Preference must disable both kinds of specialty routing')
+Bags.db.sortSpecialtyBags=true
+herb.info.isLocked=true
+local _,blocked=Bags:NextMove({herb,reagent}); assert(blocked=='wait')
+herb.info.isLocked=nil
+sections=Bags:Sections({herb,reagent})
+assert(#sections==2,'Forever reagent bag must remain separate even if its family mask is zero')
+print('PASS: specialty routing, capacity, compatibility, reagent bag, disabled option and lock safety.')

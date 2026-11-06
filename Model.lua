@@ -57,7 +57,7 @@ function Bags:Sections(slots,sort)
     end
     local sections,byKey={},{}
     for _,slot in ipairs(slots) do
-        local key=slot.family==0 and "general" or "bag"..slot.bag
+        local key=slot.family==0 and not slot.reagentBag and "general" or "bag"..slot.bag
         if not byKey[key] then
             local section={key=key,bag=slot.bag,family=slot.family,slots={}}
             byKey[key]=section; sections[#sections+1]=section
@@ -92,13 +92,24 @@ end
 function Bags:Signature(info)
     return info and ((info.hyperlink or tostring(info.itemID)).."#"..info.stackCount) or "empty"
 end
--- Only identical partial stacks may move. Display sorting must never create
--- physical swaps; different bag families remain separate for consolidation.
+local function Overlaps(a,b)
+    while a>0 and b>0 do
+        if a%2==1 and b%2==1 then return true end
+        a=math.floor(a/2); b=math.floor(b/2)
+    end
+    return false
+end
+function Bags:AcceptsSpecialtyItem(target,source)
+    if target.reagentBag then return source.isCraftingReagent==true end
+    return (target.family or 0)~=0 and Overlaps(target.family,source.itemFamily or 0)
+end
+-- Never swap unrelated items. Merge partial stacks, then optionally transfer
+-- general-bag items into compatible specialty stacks or empty slots.
 function Bags:NextMove(slots)
     local groups={}
     for _,s in ipairs(slots) do
         if s.info and (s.info.isLocked or not s.ready) then return nil,"wait" end
-        local family=s.family or 0
+        local family=s.reagentBag and "reagent" or (s.family or 0)
         groups[family]=groups[family] or {}
         table.insert(groups[family],s)
     end
@@ -110,6 +121,21 @@ function Bags:NextMove(slots)
                 if partial[link] then return {kind="merge",from=s,to=partial[link]} end
                 partial[link]=s
             end
+        end
+    end
+    if not self.db or self.db.sortSpecialtyBags==false then return end
+    for _,source in ipairs(slots) do
+        if source.info and source.family==0 and not source.reagentBag then
+            local empty
+            for _,target in ipairs(slots) do
+                if self:AcceptsSpecialtyItem(target,source) then
+                    if target.info and target.info.hyperlink==source.info.hyperlink
+                        and target.maxStack>1 and target.info.stackCount<target.maxStack then
+                        return {kind="merge",from=source,to=target}
+                    elseif not target.info and not empty then empty=target end
+                end
+            end
+            if empty then return {kind="specialty",from=source,to=empty} end
         end
     end
 end

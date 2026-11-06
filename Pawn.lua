@@ -1,7 +1,10 @@
 local _,Bags=...
 
 function Bags:InvalidatePawnUpgrades()
-    self.pawnUpgradeCache={}
+    -- Keep the last completed answer visible while Pawn's per-frame budget
+    -- delays the new one. A finished false answer still removes the arrow.
+    self.pawnGeneration=(self.pawnGeneration or 0)+1
+    self.pawnUpgradeChecked={}
     self:QueueRefresh()
 end
 
@@ -29,14 +32,17 @@ end
 function Bags:PawnUpgrade(link)
     if not link then return false end
     self.pawnUpgradeCache=self.pawnUpgradeCache or {}
+    self.pawnUpgradeChecked=self.pawnUpgradeChecked or {}
     local cached=self.pawnUpgradeCache[link]
-    if cached~=nil then return cached end
+    local generation=self.pawnGeneration or 0
+    if cached~=nil and self.pawnUpgradeChecked[link]==generation then return cached end
     -- Keep future upgrades visible even before their minimum level is reached.
     -- Pawn still decides whether the item improves an enabled character scale.
     local ok,result=pcall(PawnShouldItemLinkHaveUpgradeArrow,link,false)
     if not ok then return false end
     if result~=nil then
         self.pawnUpgradeCache[link]=result==true
+        self.pawnUpgradeChecked[link]=generation
         return result==true
     end
     -- Pawn budgets work per frame. Cache finished answers so later slots get a
@@ -48,5 +54,5 @@ function Bags:PawnUpgrade(link)
             if self.window and self.window:IsShown() then self:QueueRefresh() end
         end)
     end
-    return false
+    return cached==true
 end
