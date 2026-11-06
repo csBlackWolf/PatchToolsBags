@@ -1,3 +1,11 @@
+# PatchToolsBags 0.1.6 — 2026-11-06
+
+- Respect material restrictions when moving items into profession-slot bags. Crafting materials are no longer treated as universally compatible with every profession bag.
+- Avoid repeating a refused item move when the affected slots are unchanged, preventing repeated pickup sounds and stack flicker on automatic bag opening.
+- Allow a fresh attempt when either affected slot or its relevant item metadata changes.
+
+Validation: automated tests cover restricted profession bags, refused-drop restoration, unchanged repeated sorting without pickup calls, and successful retry after item changes. The local Forever test was confirmed in game.
+
 # PatchToolsBags 0.1.5 — 2026-11-06
 
 - Keep confirmed Pawn upgrade arrows visible while their ratings are refreshed, reducing flicker when items enter the inventory.

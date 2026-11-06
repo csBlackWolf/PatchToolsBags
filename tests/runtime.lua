@@ -682,3 +682,29 @@ assert(inventory[5][1].itemID==12 and inventory[5][1].stackCount==6)
 assert(inventory[0][2].itemID==13,'Non-reagents must stay out of the profession bag')
 assert(#Bags:Sections(Bags:Scan())==2,'Reagent bag retains its own section')
 print('PASS: Forever reagent metadata, physical transfer confirmation and separate bag display.')
+
+-- A refused native merge is restored, then skipped on unchanged reopenings.
+Bags.db.autoSortOnOpen=false; Bags.db.sortSpecialtyBags=false; Bags.failedSortMoves=nil
+inventory={[0]={{itemID=12,hyperlink='item:12',stackCount=2,quality=1},
+ {itemID=12,hyperlink='item:12',stackCount=3,quality=1}},[1]={},[2]={},[3]={},[4]={},[5]={}}
+capacities={[0]=2,[1]=0,[2]=0,[3]=0,[4]=0,[5]=0}
+local originalPickup=C_Container.PickupContainerItem
+C_Container.PickupContainerItem=function(bag,slot)
+ local destination=inventory[bag][slot]
+ if cursor and destination and cursor.hyperlink==destination.hyperlink then mutations=mutations+1; return end
+ originalPickup(bag,slot)
+end
+Bags.window:Show(); drain()
+local beforeRefusal=mutations
+Bags:Sort(); drain()
+assert(mutations>beforeRefusal and not cursor and not Bags.sorting)
+assert(inventory[0][1].stackCount==2 and inventory[0][2].stackCount==3,'Refused merge preserves both stacks')
+local afterRefusal=mutations
+Bags:Sort(); drain(); Bags:Sort(); drain()
+assert(mutations==afterRefusal,'Unchanged repeated sorts must make no native pickup calls or item sounds')
+inventory[0][2].stackCount=4
+C_Container.PickupContainerItem=originalPickup
+Bags:Sort(); drain()
+assert(mutations>afterRefusal and inventory[0][1].stackCount==6 and not inventory[0][2],
+ 'Changed contents must allow a successful retry')
+print('PASS: refused drop restoration, quiet unchanged repeated sorts and retry after item changes.')

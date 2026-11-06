@@ -100,12 +100,42 @@ local function Overlaps(a,b)
     return false
 end
 function Bags:AcceptsSpecialtyItem(target,source)
-    if target.reagentBag then return source.isCraftingReagent==true end
-    return (target.family or 0)~=0 and Overlaps(target.family,source.itemFamily or 0)
+    -- A profession-slot bag may still restrict its contents to one family.
+    -- Crafting-reagent status alone must not override that restriction.
+    if (target.family or 0)~=0 then return Overlaps(target.family,source.itemFamily or 0) end
+    return target.reagentBag and source.isCraftingReagent==true or false
+end
+local function Coordinate(slot) return tostring(slot.bag)..":"..tostring(slot.slot) end
+function Bags:MoveState(slot)
+    return self:Signature(slot.info).."/"..tostring(slot.family).."/"..tostring(slot.reagentBag)
+        .."/"..tostring(slot.itemFamily).."/"..tostring(slot.isCraftingReagent).."/"..tostring(slot.maxStack)
+end
+function Bags:CanPlanMove(source,target)
+    local key=Coordinate(source)..">"..Coordinate(target)
+    local failed=self.failedSortMoves and self.failedSortMoves[key]
+    return not failed or failed.source~=self:MoveState(source) or failed.target~=self:MoveState(target)
+end
+function Bags:RememberRefusedMove(source,target)
+    self.failedSortMoves=self.failedSortMoves or {}
+    local count=0
+    for _ in pairs(self.failedSortMoves) do count=count+1 end
+    if count>=64 then self.failedSortMoves={} end
+    self.failedSortMoves[Coordinate(source)..">"..Coordinate(target)]={
+        source=self:MoveState(source),target=self:MoveState(target)}
+end
+function Bags:PruneRefusedMoves(slots)
+    if not self.failedSortMoves then return end
+    local states={}
+    for _,slot in ipairs(slots) do states[Coordinate(slot)]=self:MoveState(slot) end
+    for key,failed in pairs(self.failedSortMoves) do
+        local source,target=key:match("^(.-)>(.-)$")
+        if states[source]~=failed.source or states[target]~=failed.target then self.failedSortMoves[key]=nil end
+    end
 end
 -- Never swap unrelated items. Merge partial stacks, then optionally transfer
 -- general-bag items into compatible specialty stacks or empty slots.
 function Bags:NextMove(slots)
+    self:PruneRefusedMoves(slots)
     local groups={}
     for _,s in ipairs(slots) do
         if s.info and (s.info.isLocked or not s.ready) then return nil,"wait" end
@@ -118,8 +148,11 @@ function Bags:NextMove(slots)
         for _,s in ipairs(group) do
             if s.info and s.maxStack>1 and s.info.stackCount<s.maxStack then
                 local link=s.info.hyperlink
-                if partial[link] then return {kind="merge",from=s,to=partial[link]} end
-                partial[link]=s
+                for _,target in ipairs(partial[link] or {}) do
+                    if self:CanPlanMove(s,target) then return {kind="merge",from=s,to=target} end
+                end
+                partial[link]=partial[link] or {}
+                table.insert(partial[link],s)
             end
         end
     end
@@ -128,7 +161,7 @@ function Bags:NextMove(slots)
         if source.info and source.family==0 and not source.reagentBag then
             local empty
             for _,target in ipairs(slots) do
-                if self:AcceptsSpecialtyItem(target,source) then
+                if self:AcceptsSpecialtyItem(target,source) and self:CanPlanMove(source,target) then
                     if target.info and target.info.hyperlink==source.info.hyperlink
                         and target.maxStack>1 and target.info.stackCount<target.maxStack then
                         return {kind="merge",from=source,to=target}

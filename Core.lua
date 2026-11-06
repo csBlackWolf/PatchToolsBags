@@ -109,7 +109,15 @@ function Bags:Sort()
                 and not (x and x.isLocked or y and y.isLocked) then
                 self:QueueRefresh(); C_Timer.After(0.02,Step)
             elseif attempts<30 then C_Timer.After(0.07,Confirm)
-            else self:StopSort({"Inventory changed or the server did not confirm the move; sorting stopped.","Inventar geändert oder Verschiebung nicht bestätigt; Sortierung angehalten."}) end
+            else
+                -- A refused drop returns the original stack to its slot. Do not
+                -- pick it up again on every automatic opening while unchanged.
+                if self:Signature(x)==self:Signature(ai) and self:Signature(y)==self:Signature(bi)
+                    and not (x and x.isLocked or y and y.isLocked) then
+                    self:RememberRefusedMove(a,b)
+                end
+                self:StopSort({"Inventory changed or the server did not confirm the move; sorting stopped.","Inventar geändert oder Verschiebung nicht bestätigt; Sortierung angehalten."})
+            end
         end
         C_Timer.After(0.02,Confirm)
     end

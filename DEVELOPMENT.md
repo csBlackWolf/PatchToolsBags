@@ -15,7 +15,7 @@ Keep real bag/slot identity separate from display position. Visual sorting order
 
 ## Inventory actions
 
-Sort physically merges identical partial stacks. With `sortSpecialtyBags` enabled (the default), it also moves items from general bags into compatible specialty stacks or empty specialty slots. Match the full item variant and the item/bag family masks. Forever's extra reagent bag uses the item API's `isCraftingReagent` result and remains a separate display section even when its family mask is zero. Never swap unrelated items or pull goods out of specialty bags to make room.
+Sort physically merges identical partial stacks. With `sortSpecialtyBags` enabled (the default), it also moves items from general bags into compatible specialty stacks or empty specialty slots. Match the full item variant and the item/bag family masks. Forever's extra profession bag honors any nonzero bag-family mask first; only a zero-mask reagent bag uses the item API's `isCraftingReagent` result and remains a separate display section even when its family mask is zero. Never swap unrelated items or pull goods out of specialty bags to make room.
 
 Automatic sorting on opening is opt-in and uses the same operation; closing before its delayed callback cancels it. Preserve item counts and stop for combat, a nonempty cursor, locks, missing cached data, unexpected inventory changes or an unconfirmed move. Closing the window stops subsequent movements. Do not queue physical moves after combat or clear a player's cursor.
 
@@ -68,3 +68,5 @@ Forever bag access observes native global entry points with `hooksecurefunc` and
 Forever expansion controls use secure click proxies targeting the original bank purchase and bag-slot buttons. Keep native parents and scripts intact. Clicking a locked slot opens the native next-slot confirmation; the addon never calls PurchaseBankTab. Refresh the visible bank after BANK_TABS_CHANGED, and hide proxy controls when returning to native presentation or ending the bank visit.
 
 Mask native carried-container pixels immediately while deferring logical hiding until the secure opening sequence finishes. Restore their original alpha after hiding or disabling replacement. Bank containers are excluded from this mask.
+
+When native item movement is refused and both unlocked slots remain unchanged, remember that directed move in memory. Skip it on subsequent sorts until either slot's contents or relevant metadata changes. Keep this cache bounded and separate per inventory view. Do not mute global item sounds, clear the player's cursor, or suppress the inventory-change checks.

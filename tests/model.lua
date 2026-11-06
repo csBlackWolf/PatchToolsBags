@@ -98,3 +98,18 @@ herb.info.isLocked=nil
 sections=Bags:Sections({herb,reagent})
 assert(#sections==2,'Forever reagent bag must remain separate even if its family mask is zero')
 print('PASS: specialty routing, capacity, compatibility, reagent bag, disabled option and lock safety.')
+
+-- Profession-slot identity is not permission to ignore a bag's family mask.
+local leather=item(20,3); leather.bag=0; leather.slot=1
+leather.itemFamily=8; leather.isCraftingReagent=true
+local meat=item(21,2); meat.bag=0; meat.slot=2
+meat.itemFamily=128; meat.isCraftingReagent=true
+local profession={bag=5,slot=1,family=8,reagentBag=true}
+local move=Bags:NextMove({meat,leather,profession})
+assert(move and move.from==leather,'Cooking reagents cannot enter a leatherworking bag')
+assert(not Bags:NextMove({meat,profession}),'Wrong-family reagents require no pickup')
+Bags:RememberRefusedMove(leather,profession)
+assert(not Bags:NextMove({leather,profession}),'Unchanged refused move must not repeat')
+leather.info.stackCount=4
+assert(Bags:NextMove({leather,profession}),'Changed stack permits a fresh attempt')
+print('PASS: profession family restrictions and unchanged refusal suppression.')
